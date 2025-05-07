@@ -1,0 +1,37 @@
+{
+    "header": {
+      "id": "12345",
+      "refCompany": "ABC",
+      "refService": "TCACT",
+      "keyValue": "key123",
+      "channels": "email",
+      "refMsgLabel": "Activación"
+    },
+    "info": {
+      "loginEnterprise": "enterprise123",
+      "refContract": "contract456"
+    },
+    "data": {
+      "tipotrj": "credito",
+      "numtrj": "1234567890123456",
+      "identi": "1234567890",
+      "fecha": "2025-05-07",
+      "desccanal": "canal email",
+      "canal": "email"
+    },
+    "addresses": [
+      {
+        "className": "email",
+        "type": "TO",
+        "ref": "usuario@ejemplo.com"
+      }
+    ],
+    "contents": [
+      {
+        "value": "contenido del mensaje",
+        "type": "text/plain",
+        "encoding": "UTF-8",
+        "name": "mensaje"
+      }
+    ]
+  }

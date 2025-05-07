@@ -1,0 +1,26 @@
+{
+    "header": {
+      "id": "12345",
+      "refCompany": "ABC",
+      "refService": "TCACT",
+      "keyValue": "key123",
+      "channels": "email",
+      "refMsgLabel": "Activación"
+    },
+    "info": {
+      "loginEnterprise": "enterprise123",
+      "refContract": "contract456"
+    },
+    "data": {
+      "tipotrj": "credito",
+      "numtrj": "1234567890123456",
+      "identi": "1234567890"
+    },
+    "addresses": [
+      {
+        "className": "email",
+        "type": "TO",
+        "ref": "usuario@ejemplo.com"
+      }
+    ]
+  }

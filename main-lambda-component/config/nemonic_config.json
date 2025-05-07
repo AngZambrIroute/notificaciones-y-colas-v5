@@ -1,0 +1,42 @@
+{
+    "TCACT": {
+      "description": "Activación de Tarjeta",
+      "required_fields": ["tipotrj", "numtrj", "identi", "fecha"]
+    },
+    "BQTCT": {
+      "description": "Bloqueo de Tarjeta",
+      "required_fields": ["tipotrj", "numtrj", "identi", "fecha", "motivo", "nombre_titular", "canal"]
+    },
+    "DESTC": {
+      "description": "Desbloqueo de Tarjeta",
+      "required_fields": ["tipotrj", "numtrj", "fecha", "motivo", "nombre_titular", "canal"]
+    },
+    "PAGTC": {
+      "description": "Pago de Tarjeta",
+      "required_fields": ["valor", "tipotrj", "numtrj", "canal"]
+    },
+    "TCPDD": {
+      "description": "Precancelación",
+      "required_fields": ["tipotrj", "numtrj", "identi", "valor", "plazo", "canal", "fecha"]
+    },
+    "DIFCO": {
+      "description": "Diferimiento de Consumo y Avance",
+      "required_fields": ["des_transaccion", "tipotrj", "valor", "numtrj", "identi", "plazo", "nombre_titular", "estado_pais", "nom_pais", "fecha", "hora"]
+    },
+    "DIFC2": {
+      "description": "Consumo Diferido y Avances TC Adicional",
+      "required_fields": ["des_transaccion", "tipotrj", "valor", "numtrj", "identi", "plazo", "nombre_titular", "estado_pais", "nom_pais", "fecha", "hora"]
+    },
+    "ERRTC":{
+        "description": "Error de Tarjeta",
+        "required_fields": ["tipotrj", "numtrj", "identi", "fecha", "hora", "motivo"]
+    },
+    "LIMCA":{
+        "description": "Límite de Consumo",
+        "required_fields": ["tipotrj", "numtrj", "identi", "fecha", "hora", "motivo"]
+    },
+    "RPAGT":{
+        "description": "Reverso de Pago",
+        "required_fields": ["tipotrj", "numtrj", "identi", "fecha", "hora", "motivo"]
+    }
+  }
