@@ -49,7 +49,6 @@ def generate_conditional_validations(nemonic_config):
                     }
                 }
             })
-    print(f"Validaciones generadas: {validations}")
     return validations
 
 NEMONIC_CONFIG = load_nemonic_config()
@@ -163,9 +162,4 @@ def validate_request(request):
     except Exception as e:
         return f"Error al validar el request: {e}",None
     
-if __name__ == "__main__":
-    archivo = load_nemonic_config()
-    for nemonic,config in archivo.items():
-        print(f"Nemonico: {nemonic}")
-        print(f"Configuracion: {config}")
         
