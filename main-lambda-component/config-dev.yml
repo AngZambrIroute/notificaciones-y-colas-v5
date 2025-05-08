@@ -1,0 +1,8 @@
+lambda:
+  timeout_seconds: 10
+  env: dev
+latinia:
+  url: "https://api.latinia.com/endpoint"
+  mantenimiento: false
+queue:
+  url: "https://sqs.region.amazonaws.com/queue/dev-notifications"

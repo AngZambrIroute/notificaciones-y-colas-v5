@@ -1,5 +1,6 @@
 import boto3
 import json
+import yaml
 from request_validation import validate_request
 from dotenv import load_dotenv
 import os
@@ -12,7 +13,28 @@ sqs = boto3.client('sqs')
 ssm = boto3.client('ssm') 
 load_dotenv()
 
+
+
+
 timeout_seconds = int(os.getenv("TIMEOUT_SECONDS", 5))
+
+
+
+def load_yaml_file(config_path):
+    """
+    Carga del archivo yaml de configuracion
+    """
+
+    try:
+        with open(config_path,'r') as file:
+            config = yaml.safe_load(file)
+            print(f"Configuracion cargada desde {config_path}")
+            return config
+        
+    except Exception as e:
+        print(f"Error al cargar el archivo de configuracion: {e}")
+        raise
+
 def lambda_handler(event,context):
     fecha_proceso = get_proccess_date()
     print("Fecha de proceso:", fecha_proceso)
