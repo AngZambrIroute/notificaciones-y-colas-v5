@@ -13,12 +13,7 @@ sqs = boto3.client('sqs')
 ssm = boto3.client('ssm') 
 load_dotenv()
 
-
-
-
 timeout_seconds = int(os.getenv("TIMEOUT_SECONDS", 5))
-
-
 
 def load_yaml_file(config_path):
     """
