@@ -4,8 +4,10 @@ import yaml
 from request_validation import validate_request
 from dotenv import load_dotenv
 import os
-from utils.utils import get_proccess_date,create_session
+import botocore
+from utils.utils import get_proccess_date,create_session,validate_config
 import requests
+import logging
 
 import datetime
 import uuid
@@ -13,7 +15,6 @@ sqs = boto3.client('sqs')
 ssm = boto3.client('ssm') 
 load_dotenv()
 
-timeout_seconds = int(os.getenv("TIMEOUT_SECONDS", 5))
 
 def load_yaml_file(config_path):
     """
@@ -29,6 +30,33 @@ def load_yaml_file(config_path):
     except Exception as e:
         print(f"Error al cargar el archivo de configuracion: {e}")
         raise
+
+
+
+def  config_logger(config_file:dict):
+    """
+    configuracion del logger de la aplicacion lambda
+    Args:
+        config_file (dict): archivo de configuracion
+    """
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+    formatter = logging.Formatter(config_file["logging"]["format"])
+    stream_handler = logging.StreamHandler()
+    stream_handler.setFormatter(formatter)
+    logger.addHandler(stream_handler)
+    error_handler = logging.StreamHandler()
+    error_handler.setLevel(logging.ERROR)
+    error_handler.setFormatter(formatter)
+    logger.addHandler(error_handler)
+    warn_handler = logging.StreamHandler()
+    warn_handler.setLevel(logging.WARNING)
+    warn_handler.setFormatter(formatter)
+    logger.addHandler(warn_handler)
+    logger.info("Logger configurado correctamente")
+
+    return logger
+
 
 def lambda_handler(event,context):
     fecha_proceso = get_proccess_date()
@@ -48,33 +76,86 @@ def lambda_handler(event,context):
                 'message':error
             })
         }
-    #cargar parametros
-    queue_url = ssm.get_parameter(
-        Name='/dev-notificaciones-colas/queue/url'
-    )['Parameter']['Value']
-    parametro_mantenimiento = ssm.get_parameter(
-        Name='/dev-notificaciones-colas/latinia/mantenimiento'
-    )['Parameter']['Value']
-    latinia_url = ssm.get_parameter(
-        Name='/dev-notificaciones-colas/latinia/url'
-    )['Parameter']['Value']
-    
-    if parametro_mantenimiento == "True":
-        print("Servicio en mantenimiento")
-        send_notification_to_queue(queue_url,body)
-    else:            
-        try:
+    enviroment = os.getenv("ENVIRONMENT")
+    enviroment = "dev" if enviroment is None else enviroment
+    config_file = load_yaml_file(f"config-{enviroment}.yml")
+
+
+    if config_file is None:
+        return {
+            "statusCode":500,
+            "headers":{
+                "Content-Type":"application/json",
+                
+            },
+            'body':json.dumps({
+                'error':'Error al cargar el archivo de configuracion',
+                'message':'Error al cargar el archivo de configuracion'
+            })
+        }
+    try:
+        validate_config(config_file)
+        print("Archivo de configuracion valido")
+        logger = config_logger(config_file)
+        queue_url = ssm.get_parameter(
+            Name=config_file["sqs"]["queue_url"]
+        )['Parameter']['Value']
+        parametro_mantenimiento = ssm.get_parameter(
+            Name=config_file["latinia"]["mantenimiento"]
+        )['Parameter']['Value']
+        latinia_url = ssm.get_parameter(
+            Name=config_file["latinia"]["url"]
+        )['Parameter']['Value']
+
+        if parametro_mantenimiento == "True":
+            logger.info("Latinia fuera de servicio.Todo trafico se envia hacia la cola")
+            send_notification_to_queue(queue_url, body)
+
+        else:
+            logger.info("Latinia se encuentra disponible. Envio de notificacion a Latinia")
+            timeout_seconds = int(config_file["latinia"]["timeout_seconds"])
             session = create_session()
-            send_notification_to_latinia(latinia_url,body,session)
-        except Exception as e:
-            send_notification_to_queue(queue_url,body)
-            print("Error al enviar notificacion a latinia:", e)
-            print("Enviando notificacion a latinia")
-    
-    print("URL de la cola:", queue_url)
-    print("URL de latinia:", latinia_url)
-    print("Parametro de mantenimiento:", parametro_mantenimiento)
-    
+            send_notification_to_latinia(latinia_url,body,session,timeout_seconds)
+    except ValueError as e:
+        logger.error("Error en la validacion del archivo de configuracion",exc_info=True,stack_info=True)
+        return {
+            "statusCode":500,
+            "headers":{
+                "Content-Type":"application/json",
+                
+            },
+            'body':json.dumps({
+                'error':'Error en la validacion del archivo de configuracion',
+                'message':str(e)
+            })
+        }
+    except botocore.exceptions.ClientError as e:
+        logger.error("Error al comunicarse con AWS",exc_info=True,stack_info=True)
+        return {
+            "statusCode":500,
+            "headers":{
+                "Content-Type":"application/json",
+                
+            },
+            'body':json.dumps({
+                'error':'Error al comunicarse con AWS',
+                'message':"Hubo un error interno en la aplicacion"
+            })
+        }
+    except requests.exceptions.RequestException as e:
+        logger.error("Hubo un error al comunicarse con latinia. el mensaje será reencolado",exc_info=True,stack_info=True)
+        send_notification_to_queue(queue_url, body)
+        return {
+            "statusCode":500,
+            "headers":{
+                "Content-Type":"application/json",
+                
+            },
+            'body':json.dumps({
+                'error':'Error en la validacion del archivo de configuracion',
+                'message':"Hubo un error interno en la aplicacion"
+            })
+        }    
     
 def send_notification_to_queue(queue_url,body):
     """
@@ -106,10 +187,11 @@ def send_notification_to_queue(queue_url,body):
             }
         )
         print("Respuesta de la cola:", response)
-    except Exception as e:
-        print("Error al enviar mensaje a la cola:", e) 
+    except botocore.exceptions.ClientError as e:
+        raise
+        
     
-def send_notification_to_latinia(latinia_url,body,session):
+def send_notification_to_latinia(latinia_url,body,session,timeout_seconds):
     """
     Envio de notificacion a latinia
     Args:

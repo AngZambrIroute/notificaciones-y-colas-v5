@@ -1,8 +1,30 @@
 lambda:
   timeout_seconds: 10
   env: dev
+  backoff:
+    max_retries: 3
+    delay_seconds: 5
+    backoff_factor: 2
+    max_delay_seconds: 60
+
 latinia:
-  url: "https://api.latinia.com/endpoint"
-  mantenimiento: false
-queue:
-  url: "https://sqs.region.amazonaws.com/queue/dev-notifications"
+  url: "/dev-notificaciones-colas/latinia/url"
+  mantenimiento: "/dev-notificaciones-colas/latinia/mantenimiento"
+sqs:
+  queue_url: "/dev-notificaciones-colas/queue/url"
+logging:
+  level: INFO
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  handlers:
+    console:
+      class: logging.StreamHandler
+      formatter: simple
+    file:
+      class: logging.FileHandler
+      filename: "/dev-notificaciones-colas/logs/lambda.log"
+      formatter: simple
+  root:
+    level: INFO
+    handlers:
+      - console
+      - file
