@@ -1,0 +1,45 @@
+name: Deploy lambda sqs trigger
+on:
+  push:
+    branches:
+      - main 
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Create package directory
+        run:  |
+          cd sqs-handler
+          mkdir package
+      - name: Copy files to package directory
+        run: |
+          cd sqs-handler
+          cp -r lambda_function.py ./package
+      - name: Create deployment package
+        run: |
+          cd sqs-handler/package
+          zip -r ../lambda_function.zip .
+          cd ..
+
+      - name: Update Lambda function code
+        run: aws lambda update-function-code --function-name notificaciones-bb-sqs-trigger --zip-file fileb://sqs-handler/lambda_function.zip
+
+      # - name: Update Lambda function configuration
+      #   run: aws lambda update-function-configuration --function-name notificaciones-bb-handlerv2 --environment "Variables={ENV=dev}"
