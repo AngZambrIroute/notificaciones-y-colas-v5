@@ -29,11 +29,12 @@ jobs:
         run: mkdir package
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run:  |
+          cd main-lambda-component
+          pip install -r requirements.txt
 
       - name: Copy files to package directory
         run: |
-          cd main-lambda-component
           mkdir package
           cp -r config ./package
           cp -r utils ./package
