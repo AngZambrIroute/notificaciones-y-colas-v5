@@ -41,7 +41,7 @@ def lambda_handler(event,context):
    """
    logger = config_logger()
    for registro in event["Records"]:
-       logger.info|(f"Registro recibido: {registro}")
+       logger.info(f"Registro recibido: {registro}")
        return {
                     'batchItemFailures': [
                         {'itemIdentifier': registro['messageId']} for registro in event['Records']
