@@ -33,7 +33,7 @@ jobs:
       - name: Install dependencies
         run:  |
           cd main-lambda-component
-          pip install -r requirements.txt
+          pip install -r requirements.txt --target ./package
 
       - name: Copy files to package directory
         run: |
