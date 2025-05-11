@@ -35,7 +35,6 @@ jobs:
 
       - name: Copy files to package directory
         run: |
-          mkdir package
           cp -r config ./package
           cp -r utils ./package
           cp -r lambda_function.py ./package
