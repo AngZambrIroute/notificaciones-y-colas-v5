@@ -1,0 +1,53 @@
+name: Deploy de funcion lambda
+
+on:
+  push:
+    branches:
+      - main 
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Create package directory
+        run: mkdir package
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Copy files to package directory
+        run: |
+          cd main-lambda-component
+          mkdir package
+          cp -r config ./package
+          cp -r utils ./package
+          cp -r lambda_function.py ./package
+          cp -r request_validation.py ./package
+          cp -r config-dev.yml ./package
+
+      - name: Create deployment package
+        run: |
+          cd package
+          zip -r ../lambda_function.zip .
+          cd ..
+
+      - name: Update Lambda function code
+        run: aws lambda update-function-code --function-name notificaciones-bb-handlerv2 --zip-file fileb://lambda_function.zip
+
+      - name: Update Lambda function configuration
+        run: aws lambda update-function-configuration --function-name notificaciones-bb-handlerv2 --environment "Variables={ENV=dev}"

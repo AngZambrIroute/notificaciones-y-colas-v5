@@ -76,7 +76,7 @@ def lambda_handler(event,context):
                 'message':error
             })
         }
-    enviroment = os.getenv("ENVIRONMENT")
+    enviroment = os.getenv("ENV")
     enviroment = "dev" if enviroment is None else enviroment
     config_file = load_yaml_file(f"config-{enviroment}.yml")
 
@@ -89,8 +89,10 @@ def lambda_handler(event,context):
                 
             },
             'body':json.dumps({
-                'error':'Error al cargar el archivo de configuracion',
-                'message':'Error al cargar el archivo de configuracion'
+                'codigoError':7011,
+                'message':'Error al cargar el archivo de configuracion',
+                'messageId':'',
+                'timestamp':get_proccess_date(),
             })
         }
     try:
@@ -109,24 +111,52 @@ def lambda_handler(event,context):
 
         if parametro_mantenimiento == "True":
             logger.info("Latinia fuera de servicio.Todo trafico se envia hacia la cola")
-            send_notification_to_queue(queue_url, body)
+            mesaage_id = send_notification_to_queue(queue_url, body)
+
+            return {
+                "statusCode":200,
+                "headers":{
+                    "Content-Type":"application/json",
+                    
+                },
+                'body':json.dumps({
+                    'codigoError':10,
+                    'message':'Latinia fuera de servicio. Todo trafico se envia hacia la cola',
+                    'messageId':mesaage_id,
+                    'timestamp':get_proccess_date(),
+                })
+            }
 
         else:
             logger.info("Latinia se encuentra disponible. Envio de notificacion a Latinia")
             timeout_seconds = int(config_file["latinia"]["timeout_seconds"])
             session = create_session()
             send_notification_to_latinia(latinia_url,body,session,timeout_seconds)
+            return {
+                "statusCode":200,
+                "headers":{
+                    "Content-Type":"application/json",
+                    
+                },
+                'body':json.dumps({
+                    'codigoError':0,
+                    'message':'Notificacion enviada a Latinia',
+                    'messageId':'',
+                    'timestamp':get_proccess_date(),
+                })
+            }
     except ValueError as e:
         logger.error("Error en la validacion del archivo de configuracion",exc_info=True,stack_info=True)
         return {
             "statusCode":500,
             "headers":{
-                "Content-Type":"application/json",
-                
+                "Content-Type":"application/json",    
             },
             'body':json.dumps({
-                'error':'Error en la validacion del archivo de configuracion',
-                'message':str(e)
+                'codigoError':60010,
+                'message':'Error al cargar el archivo de configuracion',
+                'messageId':'',
+                'timestamp':get_proccess_date(),
             })
         }
     except botocore.exceptions.ClientError as e:
@@ -138,8 +168,10 @@ def lambda_handler(event,context):
                 
             },
             'body':json.dumps({
-                'error':'Error al comunicarse con AWS',
-                'message':"Hubo un error interno en la aplicacion"
+                'codigoError':9082,
+                'message':'Error al comunicarse con AWS',
+                'messageId':'',
+                'timestamp':get_proccess_date(),
             })
         }
     except requests.exceptions.RequestException as e:
@@ -152,8 +184,10 @@ def lambda_handler(event,context):
                 
             },
             'body':json.dumps({
-                'error':'Error en la validacion del archivo de configuracion',
-                'message':"Hubo un error interno en la aplicacion"
+               'codigoError':69,
+                'message':'Error al comunicarse con latinia. el mensaje será reencolado',
+                'messageId':'',
+                'timestamp':get_proccess_date(),
             })
         }    
     
@@ -187,6 +221,7 @@ def send_notification_to_queue(queue_url,body):
             }
         )
         print("Respuesta de la cola:", response)
+        return response["MessageId"]
     except botocore.exceptions.ClientError as e:
         raise
         

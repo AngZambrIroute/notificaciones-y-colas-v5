@@ -1,2 +1,9 @@
 main-lambda-component/env
 env
+main-lambda-component/.env
+main-lambda-component/.env.local
+main-lambda-component/.env.development
+main-lambda-component/.env.production
+main-lambda-component/package
+main-lambda-component/*.zip
+main-lambda-component/*.txt
