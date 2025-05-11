@@ -25,18 +25,19 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Accesing to the directory
-        run: cd main-lambda-component
-
       - name: Create package directory
-        run: mkdir package
+        run:  |
+          cd main-lambda-component
+          mkdir package
 
       - name: Install dependencies
         run:  |
+          cd main-lambda-component
           pip install -r requirements.txt
 
       - name: Copy files to package directory
         run: |
+          cd main-lambda-component
           cp -r config ./package
           cp -r utils ./package
           cp -r lambda_function.py ./package
@@ -45,12 +46,12 @@ jobs:
 
       - name: Create deployment package
         run: |
-          cd package
+          cd main-lambda-component/package
           zip -r ../lambda_function.zip .
           cd ..
 
       - name: Update Lambda function code
-        run: aws lambda update-function-code --function-name notificaciones-bb-handlerv2 --zip-file fileb://lambda_function.zip
+        run: aws lambda update-function-code --function-name notificaciones-bb-handlerv2 --zip-file fileb://main-lambda-component/lambda_function.zip
 
       - name: Update Lambda function configuration
         run: aws lambda update-function-configuration --function-name notificaciones-bb-handlerv2 --environment "Variables={ENV=dev}"
