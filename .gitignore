@@ -7,3 +7,4 @@ main-lambda-component/.env.production
 main-lambda-component/package
 main-lambda-component/*.zip
 main-lambda-component/*.txt
+/.venv/
