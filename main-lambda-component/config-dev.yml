@@ -10,6 +10,7 @@ lambda:
 latinia:
   url: "/dev-notificaciones-colas/latinia/url"
   mantenimiento: "/dev-notificaciones-colas/latinia/mantenimiento"
+  timeout_seconds: 10
 sqs:
   queue_url: "/dev-notificaciones-colas/queue/url"
 logging:
