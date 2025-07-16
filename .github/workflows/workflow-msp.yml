@@ -41,7 +41,6 @@ jobs:
           cp -r config ./package
           cp -r utils ./package
           cp -r lambda_function.py ./package
-          cp -r request_validation.py ./package
           cp -r config-dev.yml ./package
 
       - name: Create deployment package
