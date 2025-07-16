@@ -38,8 +38,7 @@ jobs:
       - name: Copy files to package directory
         run: |
           cd main-lambda-event-minsait
-          cp -r config ./package
-          cp -r utils ./package
+          cp -r utils.py ./package
           cp -r lambda_function.py ./package
           cp -r config-dev.yml ./package
 
