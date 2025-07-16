@@ -49,7 +49,7 @@ jobs:
           cd ..
 
       - name: Update Lambda function code
-        run: aws lambda update-function-code --function-name notificaciones-nuek-bb --zip-file fileb://main-lambda-component/lambda_function.zip
+        run: aws lambda update-function-code --function-name notificaciones-nuek-bb --zip-file fileb://notificaciones-nuek-bb/lambda_function.zip
 
       # - name: Update Lambda function configuration
       #   run: aws lambda update-function-configuration --function-name notificaciones-bb-handlerv2 --environment "Variables={ENV=dev}"
