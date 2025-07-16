@@ -8,8 +8,6 @@ import botocore
 from utils.utils import get_proccess_date,create_session,validate_config
 import requests
 import logging
-
-import datetime
 import uuid
 sqs = boto3.client('sqs')
 ssm = boto3.client('ssm') 
