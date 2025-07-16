@@ -156,7 +156,20 @@ def lambda_handler(event,context):
             ContentType='application/json'
         )
         s3_path = f"s3://{BUCKET_NAME}/{s3_key}"
-        logger.info(f"Notificación enviada a S3: {s3_path}")        
+        logger.info(f"Notificación enviada a S3: {s3_path}")  
+        return {
+            "statusCode":200,
+            "headers":{
+                "Content-Type":"application/json",
+                
+            },
+            'body':json.dumps({
+                'codigoError':0,
+                'message':'Notificacion enviada correctamente',
+                'messageId':unique_id,
+                'timestamp':fecha_proceso,
+            })
+        }      
     except requests.exceptions.RequestException as e:
         return {
             "statusCode":500,
