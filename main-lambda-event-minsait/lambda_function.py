@@ -108,6 +108,7 @@ def lambda_handler(event,context):
     print("Evento recibido:", event["body"])
     #validacion de datos 
     result = validate_request(event)
+    print("Resultado de validación:", result)
     if not result["valid"]:
         return {
             "statusCode":400,
@@ -120,7 +121,6 @@ def lambda_handler(event,context):
                 'message':result["errors"]
             })
     }
-    
     enviroment = os.getenv("ENV")
     enviroment = "dev" if enviroment is None else enviroment
     config_file = load_yaml_file(f"config-{enviroment}.yml")
