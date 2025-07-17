@@ -105,79 +105,85 @@ def get_process_date():
 def lambda_handler(event,context):
     fecha_proceso = get_process_date()
     print("Fecha de proceso:", fecha_proceso)
-    print("Evento recibido:", event["body"])
-    #validacion de datos 
-    result = validate_request(event)
-    print("Resultado de validación:", result)
-    if not result["valid"]:
-        return {
-            "statusCode":400,
-            "headers":{
-                "Content-Type":"application/json",
-                
-            },
-            'body':json.dumps({
-                'error':'Error en la validacion de datos',
-                'message':result["errors"]
-            })
-    }
-    enviroment = os.getenv("ENV")
-    enviroment = "dev" if enviroment is None else enviroment
-    config_file = load_yaml_file(f"config-{enviroment}.yml")
-    
+    if 'body' in event:
+        if isinstance(event['body'], str):
+            body = json.loads(event["body"])
+        else:
+            body = event["body"]
 
-    if config_file is None:
-        return {
-            "statusCode":500,
-            "headers":{
+        result = validate_request(body)
+
+        print("Resultado de validación:", result)
+        if not result["valid"]:
+            return {
+                "statusCode": 400,
+                "headers": {
+                    "Content-Type": "application/json"
+                },
+                'body':json.dumps({
+                    'error':'Error en la validacion de datos',
+                    'message':result["errors"]
+                })
+            }
+        
+        
+        enviroment = os.getenv("ENV")
+        enviroment = "dev" if enviroment is None else enviroment
+        config_file = load_yaml_file(f"config-{enviroment}.yml")
+
+
+        if config_file is None:
+            return {
+                "statusCode":500,
+                "headers":{
+                "   Content-Type":"application/json",
+                
+                },
+            '   body':json.dumps({
+                    'codigoError':7011,
+                    'message':'Error al cargar el archivo de configuracion',
+                    'messageId':'',
+                    'timestamp':fecha_proceso,
+                })
+            }
+        try:
+            validate_config(config_file)
+            print("Archivo de configuracion valido")
+            logger = config_logger(config_file)
+            logger.info("Parametros obtenidos correctamente")
+            data = result["data"]
+            unique_id = str(uuid.uuid4())
+            timestamp = datetime.datetime.utcnow().isoformat()
+            s3_key:str = f"{BUCKET_PREFIX}/message_{timestamp}_{unique_id}.json"
+            s3_client.put_object(
+                Bucket=BUCKET_NAME,
+                Key=s3_key,
+                Body=json.dumps(data),
+                ContentType='application/json'
+            )
+            s3_path = f"s3://{BUCKET_NAME}/{s3_key}"
+            logger.info(f"Notificación enviada a S3: {s3_path}")  
+            return {
+                "statusCode":200,
+                "headers":{
                 "Content-Type":"application/json",
                 
-            },
-            'body':json.dumps({
-                'codigoError':7011,
-                'message':'Error al cargar el archivo de configuracion',
-                'messageId':'',
-                'timestamp':fecha_proceso,
-            })
-        }
-    try:
-        validate_config(config_file)
-        print("Archivo de configuracion valido")
-        logger = config_logger(config_file)
-        logger.info("Parametros obtenidos correctamente")
-        data = result["data"]
-        unique_id = str(uuid.uuid4())
-        timestamp = datetime.datetime.utcnow().isoformat()
-        s3_key:str = f"{BUCKET_PREFIX}/message_{timestamp}_{unique_id}.json"
-        s3_client.put_object(
-            Bucket=BUCKET_NAME,
-            Key=s3_key,
-            Body=json.dumps(data),
-            ContentType='application/json'
-        )
-        s3_path = f"s3://{BUCKET_NAME}/{s3_key}"
-        logger.info(f"Notificación enviada a S3: {s3_path}")  
-        return {
-            "statusCode":200,
-            "headers":{
-                "Content-Type":"application/json",
-                
-            },
-            'body':json.dumps({
-                'codigoError':0,
-                'message':'Notificacion enviada correctamente',
-                'messageId':unique_id,
-                'timestamp':fecha_proceso,
-            })
-        }      
-    except requests.exceptions.RequestException as e:
-        return {
-            "statusCode":500,
-            "headers":{
-                "Content-Type":"application/json",          
-            },
-            'body':json.dumps({
-               'codigoError':69,
+                },
+                'body':json.dumps({
+                    'codigoError':0,
+                    'message':'Notificacion enviada correctamente',
+                    'messageId':unique_id,
+                    'timestamp':fecha_proceso,
+                })
+            }      
+        except requests.exceptions.RequestException as e:
+            return {
+                "statusCode":500,
+                "headers":{
+                    "Content-Type":"application/json",          
+                },
+                'body':json.dumps({
+                'codigoError':69,
                 'message':'Hubo un error al enviar la notificacion, vuelva a intentarlo mas tarde',
                 'messageId':'',
                 'timestamp':fecha_proceso,
