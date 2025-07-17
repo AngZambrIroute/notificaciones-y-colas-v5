@@ -208,9 +208,6 @@ def main():
 "descripcionReducidaEvento": "Compra POS"
 }
 }
-
-    
-
     try:
         result = validate_request(test_event)
         if result["valid"]:
