@@ -105,8 +105,7 @@ def get_process_date():
 def lambda_handler(event,context):
     fecha_proceso = get_process_date()
     print("Fecha de proceso:", fecha_proceso)
-    print("Evento recibido:", event)
-
+    print("Evento recibido:", event["body"])
     #validacion de datos 
     result = validate_request(event)
     if not result["valid"]:
