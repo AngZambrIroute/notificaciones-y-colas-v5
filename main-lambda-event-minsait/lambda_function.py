@@ -108,7 +108,7 @@ def lambda_handler(event,context):
 
     #validacion de datos 
     result = validate_request(event)
-    if not result["Valid"]:
+    if not result["valid"]:
         return {
             "statusCode":400,
             "headers":{
