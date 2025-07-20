@@ -1,0 +1,15 @@
+-- Función auxiliar para dividir strings (reemplaza SplitMultivaluedString)
+DELIMITER $$
+CREATE FUNCTION IF NOT EXISTS SPLIT_STR(
+    x VARCHAR(65535),
+    delim VARCHAR(12),
+    pos INT
+) RETURNS VARCHAR(65535)
+READS SQL DATA
+DETERMINISTIC
+BEGIN
+    RETURN REPLACE(SUBSTRING(SUBSTRING_INDEX(x, delim, pos),
+           LENGTH(SUBSTRING_INDEX(x, delim, pos -1)) + 1),
+           delim, '');
+END$$
+DELIMITER ;

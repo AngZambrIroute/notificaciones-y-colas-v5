@@ -13,9 +13,6 @@ sqs = boto3.client('sqs')
 ssm = boto3.client('ssm') 
 s3_client = boto3.client('s3')
 
-
-
-
 BUCKET_NAME = "bb-emisor-eventos-noti"
 BUCKET_PREFIX = "eventos.json"
 load_dotenv()
