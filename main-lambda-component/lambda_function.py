@@ -10,7 +10,6 @@ import requests
 import logging
 import uuid
 sqs = boto3.client('sqs')
-ssm = boto3.client('ssm')
 s3 = boto3.client('s3') 
 
 
