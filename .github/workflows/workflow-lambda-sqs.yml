@@ -44,8 +44,8 @@ jobs:
 
       - name: Update Lambda function code
         run: aws lambda update-function-code --function-name notificaciones-bb-sqs-trigger --zip-file fileb://sqs-handler/lambda_function.zip
-      - name: Update Lambda function configuration
-        run: aws lambda update-function-configuration --function-name notificaciones-bb-sqs-trigger --timeout 60 --memory-size 256
+      # - name: Update Lambda function configuration
+      #   run: aws lambda update-function-configuration --function-name notificaciones-bb-sqs-trigger --timeout 60 --memory-size 256
 
       # - name: Update Lambda function configuration
       #   run: aws lambda update-function-configuration --function-name notificaciones-bb-handlerv2 --environment "Variables={ENV=dev}"
