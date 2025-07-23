@@ -262,7 +262,7 @@ def send_notification_to_queue(queue_url,body):
         raise
         
     
-def send_notification_to_latinia(latinia_url,body,session,timeout_seconds):
+def send_notification_to_latinia(latinia_url,body,session,timeout_seconds,logger):
     """
     Envio de notificacion a latinia
     Args:
@@ -272,13 +272,23 @@ def send_notification_to_latinia(latinia_url,body,session,timeout_seconds):
     """
     
     req_session = session
-    response = req_session.post(
+    try:
+        response = req_session.post(
             url=latinia_url,
             json=body,
             timeout=timeout_seconds
-    )
-    response.raise_for_status()
-    print("Respuesta de Latinia:", response.json())
+        )
+        response.raise_for_status()
+    except requests.exceptions.ConnectionError as e:
+        logger.error("Error de conexión a Latinia", exc_info=True, stack_info=True)
+        raise requests.exceptions.RequestException("Error de conexión a Latinia") from e
+    except requests.exceptions.Timeout as e:
+        logger.error("La solicitud a Latinia ha excedido el tiempo de espera", exc_info=True, stack_info=True)
+        raise requests.exceptions.Timeout("La solicitud a Latinia ha excedido el tiempo de espera") from e
+    except requests.exceptions.RequestException as e:
+        logger.error("Error al comunicarse con Latinia", exc_info=True, stack_info=True)
+        raise requests.exceptions.RequestException("Error al comunicarse con Latinia") from e
+    
 
 
 def change_param_to_config_file(config_file, param_name, new_value):
