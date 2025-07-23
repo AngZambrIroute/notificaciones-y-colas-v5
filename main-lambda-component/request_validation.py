@@ -32,12 +32,8 @@ def generate_conditional_validations(nemonic_config):
             validations.append({
                 "if":{
                     "properties":{
-                        "header":{
-                            "properties":{
-                                "refService":{
+                        "refService":{
                                     "enum":[nemonic]
-                                }
-                            }
                         }
                     }
                 },
