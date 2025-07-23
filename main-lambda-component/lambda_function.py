@@ -272,19 +272,13 @@ def send_notification_to_latinia(latinia_url,body,session,timeout_seconds):
     """
     
     req_session = session
-    try:
-        response = req_session.post(
+    response = req_session.post(
             url=latinia_url,
             json=body,
             timeout=timeout_seconds
-        )
-        response.raise_for_status()
-        print("Respuesta de Latinia:", response.json())
-    except requests.exceptions.RequestException as e:
-        if isinstance(e, requests.exceptions.Timeout):
-            print("La solicitud a Latinia ha excedido el tiempo de espera.")
-
-        raise
+    )
+    response.raise_for_status()
+    print("Respuesta de Latinia:", response.json())
 
 
 def change_param_to_config_file(config_file, param_name, new_value):
