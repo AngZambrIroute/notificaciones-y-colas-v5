@@ -97,15 +97,9 @@ def lambda_handler(event,context):
         validate_config(config_file)
         print("Archivo de configuracion valido")
         logger = config_logger(config_file)
-        queue_url = ssm.get_parameter(
-            Name=config_file["sqs"]["queue_url"]
-        )['Parameter']['Value']
-        parametro_mantenimiento = ssm.get_parameter(
-            Name=config_file["latinia"]["mantenimiento"]
-        )['Parameter']['Value']
-        latinia_url = ssm.get_parameter(
-            Name=config_file["latinia"]["url"]
-        )['Parameter']['Value']
+        queue_url = config_file["sqs"]["queue_url"]
+        parametro_mantenimiento = config_file["latinia"]["mantenimiento"]
+        latinia_url = config_file["latinia"]["url"]
 
         if parametro_mantenimiento == "True":
             logger.info("Latinia fuera de servicio.Todo trafico se envia hacia la cola")
@@ -129,7 +123,11 @@ def lambda_handler(event,context):
             logger.info("Latinia se encuentra disponible. Envio de notificacion a Latinia")
             timeout_seconds = int(config_file["latinia"]["timeout_seconds"])
             session = create_session()
-            send_notification_to_latinia(latinia_url,body,session,timeout_seconds)
+            try:
+                send_notification_to_latinia(latinia_url,body,session,timeout_seconds)
+            except requests.exceptions.Timeout:
+                config_file_result = change_param_to_config_file(config_file, "mantenimiento", True)
+                print("La solicitud a Latinia ha excedido el tiempo de espera.")
             return {
                 "statusCode":200,
                 "headers":{
@@ -221,6 +219,13 @@ def send_notification_to_queue(queue_url,body):
         print("Respuesta de la cola:", response)
         return response["MessageId"]
     except botocore.exceptions.ClientError as e:
+        print(f"Error al enviar el mensaje a la cola: {e}")
+        if e.response['Error']['Code'] == 'ThrottlingException':
+            print("Se ha alcanzado el límite de solicitudes a la cola.")
+        elif e.response['Error']['Code'] == 'QueueDoesNotExist':
+            print("La cola especificada no existe.")
+        elif e.response['Error']['Code'] == 'InvalidParameterValue':
+            print("Uno o más parámetros proporcionados son inválidos.")
         raise
         
     
@@ -243,4 +248,23 @@ def send_notification_to_latinia(latinia_url,body,session,timeout_seconds):
         response.raise_for_status()
         print("Respuesta de Latinia:", response.json())
     except requests.exceptions.RequestException as e:
+        if isinstance(e, requests.exceptions.Timeout):
+            print("La solicitud a Latinia ha excedido el tiempo de espera.")
+
         raise
+
+
+def change_param_to_config_file(config_file, param_name, new_value):
+    """
+    Cambia un parametro en el archivo de configuracion
+    Args:
+        config_file (dict): archivo de configuracion
+        param_name (str): nombre del parametro a cambiar
+        new_value (any): nuevo valor del parametro
+    """
+    if param_name in config_file["latinia"]:
+        config_file["latinia"][param_name] = new_value
+    else:
+        raise KeyError(f"El parametro {param_name} no existe en el archivo de configuracion")
+    
+    return config_file

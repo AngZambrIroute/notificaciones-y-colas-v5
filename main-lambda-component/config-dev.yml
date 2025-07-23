@@ -8,11 +8,11 @@ lambda:
     max_delay_seconds: 60
 
 latinia:
-  url: "/dev-notificaciones-colas/latinia/url"
-  mantenimiento: "/dev-notificaciones-colas/latinia/mantenimiento"
+  url: https://dev-latinia.example.com
+  mantenimiento: true
   timeout_seconds: 10
 sqs:
-  queue_url: "/dev-notificaciones-colas/queue/url"
+  queue_url: "https://sqs.us-east-1.amazonaws.com/308528169754/bb-notificaciones-reenvio"
 logging:
   level: INFO
   format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"

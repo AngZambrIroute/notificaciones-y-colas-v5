@@ -1,0 +1,30 @@
+{
+  "refService": "CONIN",
+  "channels": "SAT",
+  "data": {
+    "tipotrj": "Visa",
+    "valor": "89.99",
+    "numtrj": "**** **** **** 0101",
+    "identi": "0987654321",
+    "des_transaccion": "Compra en Amazon",
+    "estado_pais": "Guayas",
+    "nom_pais": "Ecuador",
+    "fecha": "2025-05-27",
+    "hora": "10:45:00",
+    "nombre_cliente": "Luis Martínez",
+    "motivo": "Compra en línea",
+    "canal": "SAT"
+  },
+  "addresses": [
+    {
+      "className": "email",
+      "type": "to",
+      "ref": "cliente@example.com"
+    },
+   {
+      "className": "phone",
+      "type": "to",
+      "ref": "0991899474"
+    }
+  ]
+}

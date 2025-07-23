@@ -112,7 +112,7 @@ def create_requests_session():
 def send_notification_to_latinia(latinia_url, body, session):
     """Función de ayuda para enviar la notificación a Latinia."""
     response = session.post(url=latinia_url, json=body, timeout=LATINIA_TIMEOUT)
-    response.raise_for_status() # Lanza un error para códigos 4xx/5xx
+    response.raise_for_status() 
     logger.info(f"Respuesta de Latinia en reintento: {response.text}")
 
 def lambda_handler(event, context):

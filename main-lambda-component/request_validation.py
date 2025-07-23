@@ -56,38 +56,45 @@ ALLOWED_NEMONICS = get_allowed_nemonics_from_config()
 
 request_schema = {
     "type":"object",
-    "required":["header","info","data","addresses"],
+    "required":["data","addresses"],
     "properties":{
-        "header":{
-            "type":"object",
-            "properties":{
-                "id":{
-                    "type":"string"
-                },
-                "refCompany":{
-                    "type":"string"
-                },
-                "refService":{
-                    "type":"string",
-                    "enum":ALLOWED_NEMONICS
-                },
-                "keyValue":{
-                    "type":"string"
-                },
-                "channels":{
-                    "type":["string","null"]
-                },
-                "refMsgLabel":{"type":"string"}
-            }
+        "refservice":{
+            "type":"string",
+            "enum":ALLOWED_NEMONICS
         },
-        "info":{
-            "type":"object",
-            "required": ["loginEnterprise", "refContract"],
-            "properties": {
-                "loginEnterprise": {"type": "string"},
-                "refContract": {"type": "string"}
-            }
+        "channels":{
+            "type": ["string"]
         },
+        # "header":{
+        #     "type":"object",
+        #     "properties":{
+        #         "id":{
+        #             "type":"string"
+        #         },
+        #         "refCompany":{
+        #             "type":"string"
+        #         },
+        #         "refService":{
+        #             "type":"string",
+        #             "enum":ALLOWED_NEMONICS
+        #         },
+        #         "keyValue":{
+        #             "type":"string"
+        #         },
+        #         "channels":{
+        #             "type":["string","null"]
+        #         },
+        #         "refMsgLabel":{"type":"string"}
+        #     }
+        # },
+        # "info":{
+        #     "type":"object",
+        #     "required": ["loginEnterprise", "refContract"],
+        #     "properties": {
+        #         "loginEnterprise": {"type": "string"},
+        #         "refContract": {"type": "string"}
+        #     }
+        # },
         "data":{
             "type": "object",
             "properties": {
