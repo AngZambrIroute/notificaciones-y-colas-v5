@@ -16,8 +16,8 @@ def create_session(reintentos:int = 3,backoff_factor:float = 0.5,):
     """
     session = requests.Session()
     retry_reintentos = Retry(
-        total=3,
-        backoff_factor=0.5,
+        total=reintentos,
+        backoff_factor=backoff_factor,
         status_forcelist=[500, 502, 503, 504],
         raise_on_status=False,
         allowed_methods=["POST"],

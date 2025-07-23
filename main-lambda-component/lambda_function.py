@@ -34,24 +34,6 @@ def load_yaml_file(config_path):
         print(f"Error al cargar el archivo de configuracion: {e}")
         raise
 
-# def load_config_from_s3(bucket_name,object_key):
-#     """
-#     Carga del archivo de configuracion desde S3
-#     Args:
-#         bucket_name (str): nombre del bucket de S3
-#         object_key (str): clave del objeto en S3
-#     """
-#     try:
-#         response = s3.get_object(Bucket=bucket_name, Key=object_key)
-#         config_data = response['Body'].read().decode('utf-8')
-#         config = yaml.safe_load(config_data)
-#         print(f"Configuracion cargada desde S3: {bucket_name}/{object_key}")
-#         return config
-#     except Exception as e:
-#         print(f"Error al cargar el archivo de configuracion desde S3: {e}")
-#         raise
-
-
 def config_logger(config_file: dict):
     """
     configuracion del logger de la aplicacion lambda
@@ -122,6 +104,9 @@ def lambda_handler(event,context):
         queue_url = config_file["sqs"]["queue_url"]
         parametro_mantenimiento = config_file["latinia"]["mantenimiento"]
         latinia_url = config_file["latinia"]["url"]
+        reintentos = int(config_file["lambda"]["backoff"]["max_retries"])
+        backoff_factor = float(config_file["lambda"]["backoff"]["backoff_factor"])
+
 
         if parametro_mantenimiento is True:
             logger.info("Latinia fuera de servicio.Todo trafico se envia hacia la cola")
@@ -144,7 +129,7 @@ def lambda_handler(event,context):
         else:
             logger.info("Latinia se encuentra disponible. Envio de notificacion a Latinia")
             timeout_seconds = int(config_file["latinia"]["timeout_seconds"])
-            session = create_session()
+            session = create_session(reintentos,backoff_factor)
             try:
                 send_notification_to_latinia(latinia_url,body,session,timeout_seconds,logger)
                 return {
@@ -177,7 +162,7 @@ def lambda_handler(event,context):
                 }
             
             except requests.exceptions.Timeout:
-                send_notification_to_queue(queue_url, body)
+                message_id = send_notification_to_queue(queue_url, body)
                 return {
                     "statusCode": 500,
                     "headers": {
@@ -185,14 +170,14 @@ def lambda_handler(event,context):
                     },
                     'body': json.dumps({
                         'codigoError': 60010,
-                        'message': 'La solicitud a Latinia ha excedido el tiempo de espera. Cambiando parametro de mantenimiento a True',
-                        'messageId': '',
+                        'message': f'La solicitud a Latinia ha excedido el tiempo de espera. Cambiando parametro de mantenimiento a True:',
+                        'messageId': message_id,
                         'timestamp': get_proccess_date(),
                  })
                 }
             except requests.exceptions.RequestException as e:
-                logger.error("Hubo un error al comunicarse con Latinia. El mensaje será reencolado",exc_info=True,stack_info=True)
-                send_notification_to_queue(queue_url, body)
+                logger.error(f"Hubo un error al comunicarse con Latinia. El mensaje será reencolado: {e}",exc_info=True,stack_info=True)
+                message_id = send_notification_to_queue(queue_url, body)
                 return {
                     "statusCode":500,
                     "headers":{
@@ -202,7 +187,7 @@ def lambda_handler(event,context):
                     'body':json.dumps({
                         'codigoError':69,
                         'message':'Error al comunicarse con Latinia. El mensaje será reencolado',
-                        'messageId':'',
+                        'messageId':message_id,
                         'timestamp':get_proccess_date(),
                     })
                 }

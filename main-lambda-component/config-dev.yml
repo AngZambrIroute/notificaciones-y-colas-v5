@@ -4,7 +4,7 @@ lambda:
   backoff:
     max_retries: 3
     delay_seconds: 5
-    backoff_factor: 2
+    backoff_factor: 0.5
     max_delay_seconds: 60
 
 latinia:
