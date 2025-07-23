@@ -124,7 +124,7 @@ def lambda_handler(event,context):
             timeout_seconds = int(config_file["latinia"]["timeout_seconds"])
             session = create_session()
             try:
-                send_notification_to_latinia(latinia_url,body,session,timeout_seconds)
+                send_notification_to_latinia(latinia_url,body,session,timeout_seconds,logger)
                 return {
                 "statusCode":200,
                 "headers":{
@@ -156,6 +156,25 @@ def lambda_handler(event,context):
                         'messageId':'',
                         'timestamp':get_proccess_date(),
                     })
+                }
+            
+            except requests.exceptions.Timeout:
+                config_file_result = change_param_to_config_file(config_file, "mantenimiento", True)
+                logger.error("La solicitud a Latinia ha excedido el tiempo de espera. Cambiando parametro de mantenimiento a True")
+                with open(f"config-{enviroment}.yml", 'w') as file:
+                    yaml.dump(config_file_result, file)
+                send_notification_to_queue(queue_url, body)
+                return {
+                    "statusCode": 500,
+                    "headers": {
+                        "Content-Type": "application/json",
+                    },
+                    'body': json.dumps({
+                        'codigoError': 60010,
+                        'message': 'La solicitud a Latinia ha excedido el tiempo de espera. Cambiando parametro de mantenimiento a True',
+                        'messageId': '',
+                        'timestamp': get_proccess_date(),
+                 })
                 }
             except requests.exceptions.RequestException as e:
                 logger.error("Hubo un error al comunicarse con Latinia. El mensaje será reencolado",exc_info=True,stack_info=True)
