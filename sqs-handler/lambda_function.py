@@ -132,41 +132,35 @@ def read_all_messages_from_queue(queue_url, logger):
         logger.info(f"Iniciando lectura de mensajes de la cola: {queue_url}")
         
         while True:
-            # Recibir mensajes de la cola (máximo 10 por vez)
             response = sqs.receive_message(
                 QueueUrl=queue_url,
-                MaxNumberOfMessages=10,  # Máximo permitido por AWS
-                WaitTimeSeconds=5,       # Long polling para mejor eficiencia
+                MaxNumberOfMessages=10,  
+                WaitTimeSeconds=5,      
                 MessageAttributeNames=['All'],
                 AttributeNames=['All']
             )
             
-            # Verificar si hay mensajes
             messages = response.get('Messages', [])
             
             if not messages:
                 logger.info("No hay más mensajes en la cola")
                 break
             
-            # Procesar cada mensaje
             for i, message in enumerate(messages, 1):
                 total_messages += 1
                 message_id = message.get('MessageId', 'N/A')
                 receipt_handle = message.get('ReceiptHandle', 'N/A')
                 
-                # Log del mensaje completo
                 logger.info(f"--- Mensaje #{total_messages} ---")
                 logger.info(f"MessageId: {message_id}")
                 logger.info(f"ReceiptHandle: {receipt_handle[:50]}...")  # Solo primeros 50 caracteres
                 
-                # Log del cuerpo del mensaje
                 try:
                     message_body = json.loads(message.get('Body', '{}'))
                     logger.info(f"Cuerpo del mensaje: {json.dumps(message_body, indent=2, ensure_ascii=False)}")
                 except json.JSONDecodeError:
                     logger.warning(f"Cuerpo del mensaje no es JSON válido: {message.get('Body', '')}")
                 
-                # Log de atributos del mensaje
                 message_attributes = message.get('MessageAttributes', {})
                 if message_attributes:
                     logger.info("Atributos del mensaje:")

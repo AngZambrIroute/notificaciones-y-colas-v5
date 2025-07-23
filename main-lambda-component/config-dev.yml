@@ -8,7 +8,7 @@ lambda:
     max_delay_seconds: 60
 
 latinia:
-  url: https://dev-latinia.example.com
+  url: https://api-mock-seven.vercel.app/api/v1/send
   mantenimiento: False
   timeout_seconds: 10
 sqs:
