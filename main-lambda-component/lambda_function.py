@@ -162,6 +162,7 @@ def lambda_handler(event,context):
             
             except requests.exceptions.Timeout:
                 message_id = send_notification_to_queue(queue_url, body)
+                change_param_to_config_file(config_file, "mantenimiento", True)
                 return {
                     "statusCode": 500,
                     "headers": {
@@ -176,6 +177,7 @@ def lambda_handler(event,context):
                 }
             except requests.exceptions.RequestException as e:
                 logger.error(f"Hubo un error al comunicarse con Latinia. El mensaje será reencolado: {e}",exc_info=True,stack_info=True)
+                change_param_to_config_file(config_file, "mantenimiento", True)
                 message_id = send_notification_to_queue(queue_url, body)
                 return {
                     "statusCode":500,
@@ -193,6 +195,7 @@ def lambda_handler(event,context):
             
     except ValueError as e:
         logger.error("Error en la validacion del archivo de configuracion",exc_info=True,stack_info=True)
+        change_param_to_config_file(config_file, "mantenimiento", True)
         return {
             "statusCode":500,
             "headers":{
@@ -307,7 +310,21 @@ def send_notification_to_latinia(latinia_url,body,session,timeout_seconds,logger
         logger.error("Error al comunicarse con Latinia", exc_info=True, stack_info=True)
         raise
     
-
+def change_param_to_config_file(config_file,param_name,new_value):
+    """
+    Cambia un parametro en el archivo de configuracion
+    Args:
+        config_file (dict): archivo de configuracion
+        param_name (str): nombre del parametro a cambiar
+        new_value (any): nuevo valor del parametro
+    """
+    
+    if param_name in config_file["latinia"]:
+        config_file["latinia"][param_name] = new_value
+    else:
+        raise KeyError(f"El parametro {param_name} no existe en el archivo de configuracion")
+    
+    return config_file
 
 def change_param_to_config_file(config_file, param_name, new_value):
     """

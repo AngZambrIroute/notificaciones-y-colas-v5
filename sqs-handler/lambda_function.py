@@ -118,6 +118,17 @@ def lambda_handler(event,context):
     backoff_factor = float(config_file["lambda"]["backoff"]["backoff_factor"])
 
     try:
+        if parametro_mantenimiento is True:
+            logger.info("El servicio de Latinia esta en mantenimiento, no se procesaran mensajes")
+            return {
+                "statusCode": 503,
+                "headers": {'Content-Type': 'application/json'},
+                'body': json.dumps({
+                    'codigoError': 60003,
+                    'message': 'El servicio de Latinia está en mantenimiento, no se procesarán mensajes',
+                    'timestamp': get_proccess_date(),
+                })
+            }
         get_queue_attributes(queue_url, logger)
 
         stats = process_all_messages_and_send_to_latinia(
