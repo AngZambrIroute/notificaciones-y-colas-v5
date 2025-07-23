@@ -101,7 +101,7 @@ def lambda_handler(event,context):
         parametro_mantenimiento = config_file["latinia"]["mantenimiento"]
         latinia_url = config_file["latinia"]["url"]
 
-        if parametro_mantenimiento == "True":
+        if parametro_mantenimiento is True:
             logger.info("Latinia fuera de servicio.Todo trafico se envia hacia la cola")
             mesaage_id = send_notification_to_queue(queue_url, body)
 
@@ -125,10 +125,7 @@ def lambda_handler(event,context):
             session = create_session()
             try:
                 send_notification_to_latinia(latinia_url,body,session,timeout_seconds)
-            except requests.exceptions.Timeout:
-                config_file_result = change_param_to_config_file(config_file, "mantenimiento", True)
-                print("La solicitud a Latinia ha excedido el tiempo de espera.")
-            return {
+                return {
                 "statusCode":200,
                 "headers":{
                     "Content-Type":"application/json",
@@ -141,6 +138,42 @@ def lambda_handler(event,context):
                     'timestamp':get_proccess_date(),
                 })
             }
+            except requests.exceptions.Timeout:
+                config_file_result = change_param_to_config_file(config_file, "mantenimiento", True)
+                logger.error("La solicitud a Latinia ha excedido el tiempo de espera. Cambiando parametro de mantenimiento a True")
+                with open(f"config-{enviroment}.yml", 'w') as file:
+                    yaml.dump(config_file_result, file)
+                send_notification_to_queue(queue_url, body)
+                return {
+                    "statusCode":500,
+                    "headers":{
+                        "Content-Type":"application/json",
+                        
+                    },
+                    'body':json.dumps({
+                        'codigoError':60010,
+                        'message':'La solicitud a Latinia ha excedido el tiempo de espera. Cambiando parametro de mantenimiento a True',
+                        'messageId':'',
+                        'timestamp':get_proccess_date(),
+                    })
+                }
+            except requests.exceptions.RequestException as e:
+                logger.error("Hubo un error al comunicarse con Latinia. El mensaje será reencolado",exc_info=True,stack_info=True)
+                send_notification_to_queue(queue_url, body)
+                return {
+                    "statusCode":500,
+                    "headers":{
+                        "Content-Type":"application/json",
+                        
+                    },
+                    'body':json.dumps({
+                        'codigoError':69,
+                        'message':'Error al comunicarse con Latinia. El mensaje será reencolado',
+                        'messageId':'',
+                        'timestamp':get_proccess_date(),
+                    })
+                }
+            
     except ValueError as e:
         logger.error("Error en la validacion del archivo de configuracion",exc_info=True,stack_info=True)
         return {
