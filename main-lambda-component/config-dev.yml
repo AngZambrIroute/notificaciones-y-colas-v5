@@ -9,7 +9,7 @@ lambda:
 
 latinia:
   url: https://dev-latinia.example.com
-  mantenimiento: true
+  mantenimiento: False
   timeout_seconds: 10
 sqs:
   queue_url: "https://sqs.us-east-1.amazonaws.com/308528169754/bb-notificaciones-reenvio"
