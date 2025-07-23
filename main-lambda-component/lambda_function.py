@@ -222,7 +222,7 @@ def lambda_handler(event,context):
             })
         }
     except botocore.exceptions.ClientError as e:
-        logger.error("Error al comunicarse con AWS",exc_info=True,stack_info=True)
+        logger.error(f"Error al comunicarse con AWS{e}",exc_info=True,stack_info=True)
         return {
             "statusCode":500,
             "headers":{
