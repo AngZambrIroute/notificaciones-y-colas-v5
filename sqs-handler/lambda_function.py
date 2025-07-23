@@ -49,6 +49,7 @@ def config_logger(config_file:dict):
     warn_handler.setFormatter(formatter)
     logger.addHandler(warn_handler)
     logger.info("Logger configurado correctamente")
+    return logger
 
 def get_proccess_date():
 
