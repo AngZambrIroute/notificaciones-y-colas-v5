@@ -1,7 +1,6 @@
 import json
 import os
 import boto3
-import requests
 import logging
 import yaml
 import datetime
