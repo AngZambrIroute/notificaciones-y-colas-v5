@@ -295,6 +295,7 @@ def send_notification_to_latinia(latinia_url,body,session,timeout_seconds,logger
             json=body,
             timeout=timeout_seconds
         )
+        logger.info(f"Respuesta de Latinia: {response.status_code} - {response.text}")
         response.raise_for_status()
     except requests.exceptions.ConnectionError as e:
         logger.error("Error de conexión a Latinia", exc_info=True, stack_info=True)
