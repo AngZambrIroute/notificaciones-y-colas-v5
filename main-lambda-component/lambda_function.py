@@ -139,10 +139,6 @@ def lambda_handler(event,context):
                 })
             }
             except requests.exceptions.Timeout:
-                config_file_result = change_param_to_config_file(config_file, "mantenimiento", True)
-                logger.error("La solicitud a Latinia ha excedido el tiempo de espera. Cambiando parametro de mantenimiento a True")
-                with open(f"config-{enviroment}.yml", 'w') as file:
-                    yaml.dump(config_file_result, file)
                 send_notification_to_queue(queue_url, body)
                 return {
                     "statusCode":500,
@@ -159,10 +155,6 @@ def lambda_handler(event,context):
                 }
             
             except requests.exceptions.Timeout:
-                config_file_result = change_param_to_config_file(config_file, "mantenimiento", True)
-                logger.error("La solicitud a Latinia ha excedido el tiempo de espera. Cambiando parametro de mantenimiento a True")
-                with open(f"config-{enviroment}.yml", 'w') as file:
-                    yaml.dump(config_file_result, file)
                 send_notification_to_queue(queue_url, body)
                 return {
                     "statusCode": 500,
