@@ -1,4 +1,5 @@
-permisos a servicio serviceManager/ssm
+permisos de s3
+timeout a 1 minuto para ejecucion
 permisos de lambda para acceso a ssm
 permisos de lambda para acceso a sqs
 conexion de sqs con dlq y eventbridge

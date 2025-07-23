@@ -24,7 +24,7 @@ def load_yaml_file(config_path):
     """
     response = s3.get_object(Bucket=BUCKET_NAME, Key=config_path)
     config_data = response['Body'].read().decode('utf-8')
-
+    print(f"Configuracion cargada desde S3: {BUCKET_NAME}/{config_path}")
     try:
         config = yaml.safe_load(config_data)
         print(f"Configuracion cargada desde {config_path}")
