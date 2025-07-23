@@ -10,7 +10,11 @@ import requests
 import logging
 import uuid
 sqs = boto3.client('sqs')
-ssm = boto3.client('ssm') 
+ssm = boto3.client('ssm')
+s3 = boto3.client('s3') 
+
+
+BUCKET_NAME = os.getenv("CONFIG_BUCKET_NAME") or "bb-emisormdp-config"
 load_dotenv()
 
 
@@ -18,20 +22,37 @@ def load_yaml_file(config_path):
     """
     Carga del archivo yaml de configuracion
     """
+    response = s3.get_object(Bucket=BUCKET_NAME, Key=config_path)
+    config_data = response['Body'].read().decode('utf-8')
 
     try:
-        with open(config_path,'r') as file:
-            config = yaml.safe_load(file)
-            print(f"Configuracion cargada desde {config_path}")
-            return config
-        
+        config = yaml.safe_load(config_data)
+        print(f"Configuracion cargada desde {config_path}")
+        return config
+
     except Exception as e:
         print(f"Error al cargar el archivo de configuracion: {e}")
         raise
 
+# def load_config_from_s3(bucket_name,object_key):
+#     """
+#     Carga del archivo de configuracion desde S3
+#     Args:
+#         bucket_name (str): nombre del bucket de S3
+#         object_key (str): clave del objeto en S3
+#     """
+#     try:
+#         response = s3.get_object(Bucket=bucket_name, Key=object_key)
+#         config_data = response['Body'].read().decode('utf-8')
+#         config = yaml.safe_load(config_data)
+#         print(f"Configuracion cargada desde S3: {bucket_name}/{object_key}")
+#         return config
+#     except Exception as e:
+#         print(f"Error al cargar el archivo de configuracion desde S3: {e}")
+#         raise
 
 
-def  config_logger(config_file:dict):
+def config_logger(config_file: dict):
     """
     configuracion del logger de la aplicacion lambda
     Args:
@@ -76,6 +97,7 @@ def lambda_handler(event,context):
         }
     enviroment = os.getenv("ENV")
     enviroment = "dev" if enviroment is None else enviroment
+
     config_file = load_yaml_file(f"config-{enviroment}.yml")
 
 
