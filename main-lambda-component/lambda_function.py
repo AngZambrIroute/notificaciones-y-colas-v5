@@ -300,13 +300,13 @@ def send_notification_to_latinia(latinia_url,body,session,timeout_seconds,logger
         response.raise_for_status()
     except requests.exceptions.ConnectionError as e:
         logger.error("Error de conexión a Latinia", exc_info=True, stack_info=True)
-        raise requests.exceptions.RequestException("Error de conexión a Latinia") from e
+        raise
     except requests.exceptions.Timeout as e:
         logger.error("La solicitud a Latinia ha excedido el tiempo de espera", exc_info=True, stack_info=True)
-        raise requests.exceptions.Timeout("La solicitud a Latinia ha excedido el tiempo de espera") from e
+        raise
     except requests.exceptions.RequestException as e:
         logger.error("Error al comunicarse con Latinia", exc_info=True, stack_info=True)
-        raise requests.exceptions.RequestException("Error al comunicarse con Latinia") from e
+        raise
     
 
 
