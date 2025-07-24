@@ -64,7 +64,7 @@ def config_logger(config_file: dict):
 
 
 def lambda_handler(event,context):
-    fecha_proceso = get_proccess_date()
+    fecha_proceso = get_proccess_date().strftime('%Y-%m-%d %H:%M:%S')
     print("Fecha de proceso:", fecha_proceso)
 
     #validacion de datos 
@@ -115,7 +115,7 @@ def lambda_handler(event,context):
         latinia_url = config_file["latinia"]["url"]
         reintentos = int(config_file["lambda"]["backoff"]["max_retries"])
         backoff_factor = float(config_file["lambda"]["backoff"]["backoff_factor"])
-        fecha_proceso = get_proccess_date().strftime('%Y-%m-%d %H:%M:%S')
+        
 
         #obtencion de parametros de notificacion
 
