@@ -7,7 +7,7 @@ import os
 import botocore
 from utils.utils import get_proccess_date,create_session,validate_config
 from utils.utils import get_secret
-from data.get_params import get_params_noti_as_dict
+from utils.utils import get_params_noti_as_dict
 import requests
 import logging
 import uuid
