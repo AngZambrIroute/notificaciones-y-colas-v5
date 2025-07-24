@@ -70,16 +70,21 @@ def lambda_handler(event,context):
     #validacion de datos 
     error,body = validate_request(event)
     if error:
+        status_code = 400
+        if error.get("error_type") == "VALIDATION_ERROR":
+            status_code = 500
         return {
-            "statusCode":400,
-            "headers":{
-                "Content-Type":"application/json",
-                
+            "statusCode": status_code,
+            "headers": {
+                "Content-Type": "application/json",
             },
-            'body':json.dumps({
-                'error':'Error en la validacion de datos',
-                'message':error
-            })
+            'body': json.dumps({
+                'codigoError': 40001,
+                'error': error.get("error_type", "VALIDATION_ERROR"),
+                'message': error.get("message", "Error en la validación de datos"),
+                'details': error.get("errors", []) if error.get("error_type") == "VALIDATION_ERROR" else error.get("details"),
+                'timestamp': get_proccess_date(),
+            }, ensure_ascii=False, indent=2)
         }
     enviroment = os.getenv("ENV")
     enviroment = "dev" if enviroment is None else enviroment

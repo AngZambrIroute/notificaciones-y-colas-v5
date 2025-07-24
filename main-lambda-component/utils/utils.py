@@ -61,18 +61,10 @@ def create_session(reintentos:int = 3,backoff_factor:float = 0.5,):
     session.timeout = (10,10)
     return session
 
-def generate_simple_sequential_id(canal: str = "BMO") -> str:
-    """
-    Genera un ID único usando timestamp + UUID truncado
-    """
-    canal = canal.ljust(3, '0')[:3]
-    now = datetime.datetime.now()
-    timestamp = now.strftime("%Y%m%d%H%M%S")
-    
-    # Usar últimos 6 dígitos del UUID (hex a decimal)
-    uuid_suffix = str(abs(hash(str(uuid.uuid4()))))[-6:].zfill(6)
-    
-    return f"{canal}{timestamp}{uuid_suffix}"
+
+
+
+
 
 
 
@@ -82,7 +74,25 @@ def get_proccess_date():
     Obtener la fecha y hora actual
     """
     ecuador_timezone = pytz.timezone("America/Guayaquil")
-    return datetime.datetime.now(ecuador_timezone).strftime('%Y-%m-%d %H:%M:%S')
+    return datetime.datetime.now(ecuador_timezone)
+#.strftime('%Y-%m-%d %H:%M:%S')
+
+
+
+
+def generate_simple_sequential_id(canal: str = "BMO",fecha_proceso:datetime=get_proccess_date()) -> str:
+    """
+    Genera un ID único usando timestamp + UUID truncado
+    """
+    canal = canal.ljust(3, '0')[:3]
+    now = fecha_proceso
+    timestamp = now.strftime("%Y%m%d%H%M%S")
+    
+    # Usar últimos 6 dígitos del UUID (hex a decimal)
+    uuid_suffix = str(abs(hash(str(uuid.uuid4()))))[-6:].zfill(6)
+    
+    return f"{canal}{timestamp}{uuid_suffix}"
+
 
 def validate_config(config):
     required_structure = {
@@ -227,3 +237,62 @@ def get_specific_param(user: str, password: str, host: str, port: int, db: str, 
         raise ValueError(f"Parámetro '{param_name}' no encontrado")
     
     return params_dict[param_name]
+
+
+
+
+def build_latinia_payload(request_data: dict, db_params: dict, logger=None) -> dict:
+    """
+    Construye el payload para Latinia basándose en el request de entrada y parámetros de DB
+    Pasa el objeto data tal como viene en el request
+    
+    Args:
+        request_data (dict): Request de entrada validado
+        db_params (dict): Parámetros obtenidos de la base de datos
+        logger: Logger opcional
+    
+    Returns:
+        dict: Payload formateado para Latinia
+    """
+    try:
+        # Generar ID único basado en el canal
+        canal = request_data.get("channels", "BMO")
+        unique_id = generate_simple_sequential_id(canal)
+        
+        ref_service = request_data.get("refService", "DEFAULT")
+        cod_ente = str(request_data.get("cod_ente", "000000"))
+        data_section = request_data.get("data", {})  # Pasar tal como viene
+        addresses = request_data.get("addresses", [])
+        contents = request_data.get("contents", [])
+        
+        empresa = db_params.get("NotiEmpresa", "BOLIVARIANO")
+        ref_msg_label = db_params.get("NotiRefMessageLabel", "Avisos24")
+        
+        latinia_payload = {
+            "header": {
+                "id": unique_id,
+                "refCompany": empresa,
+                "refService": ref_service,
+                "keyValue": cod_ente,
+                "channels": canal,
+                "refMsgLabel": ref_msg_label
+            },
+            "info": {
+                "loginEnterprise": empresa,
+                "refContract": ref_service  
+            },
+            "data": data_section,  
+            "addresses": addresses,
+            "contents": contents
+        }
+        
+        if logger:
+            logger.info(f"Payload construido para Latinia con ID: {unique_id}")
+            logger.debug(f"Payload completo: {json.dumps(latinia_payload, indent=2, ensure_ascii=False)}")
+        
+        return latinia_payload
+        
+    except Exception as e:
+        if logger:
+            logger.error(f"Error al construir payload para Latinia: {e}", exc_info=True)
+        raise

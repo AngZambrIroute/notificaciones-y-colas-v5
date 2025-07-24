@@ -1,4 +1,4 @@
-from jsonschema import validate
+from jsonschema import validate,ValidationError
 import json
 import os
 
@@ -14,6 +14,54 @@ def load_nemonic_config():
         print(f"Error: El archivo de configuracion {config_path} no fue encontrado.")
         return {}
     
+def format_validation_error(error: ValidationError) -> dict:
+    """
+    Formatea el error de validación de JSON Schema en un formato más legible
+    
+    Args:
+        error (ValidationError): Error de validación de jsonschema
+        
+    Returns:
+        dict: Error formateado
+    """
+    error_details = {
+        "field": ".".join(str(p) for p in error.absolute_path) if error.absolute_path else "root",
+        "message": error.message,
+        "failed_value": error.instance,
+        "validator": error.validator,
+        "validator_value": error.validator_value
+    }
+    
+    # Casos específicos para diferentes tipos de errores
+    if error.validator == "required":
+        missing_fields = error.validator_value
+        if isinstance(missing_fields, list):
+            error_details["missing_fields"] = missing_fields
+            error_details["message"] = f"Faltan los siguientes campos requeridos: {', '.join(missing_fields)}"
+        else:
+            error_details["missing_fields"] = [missing_fields]
+            error_details["message"] = f"Falta el campo requerido: {missing_fields}"
+    
+    elif error.validator == "enum":
+        valid_values = error.validator_value
+        error_details["valid_values"] = valid_values
+        error_details["message"] = f"Valor inválido. Valores permitidos: {', '.join(map(str, valid_values))}"
+    
+    elif error.validator == "type":
+        expected_types = error.validator_value
+        if isinstance(expected_types, list):
+            error_details["expected_types"] = expected_types
+            error_details["message"] = f"Tipo de dato inválido. Se esperaba: {' o '.join(expected_types)}"
+        else:
+            error_details["expected_types"] = [expected_types]
+            error_details["message"] = f"Tipo de dato inválido. Se esperaba: {expected_types}"
+    
+    elif error.validator == "pattern":
+        pattern = error.validator_value
+        error_details["expected_pattern"] = pattern
+        error_details["message"] = f"El formato no es válido. Debe cumplir el patrón: {pattern}"
+    
+    return error_details
 
 def get_allowed_nemonics_from_config():
     """
@@ -164,9 +212,31 @@ def validate_request(request):
         
         validate(instance=body,schema=request_schema)
         return None,body
+    
+    except ValidationError as e:
+        main_error = format_validation_error(e)
+        all_errors = [main_error]
+        if hasattr(e,'context') and e.context:
+            for sub_error in e.context:
+                all_errors.append(format_validation_error(sub_error))
+        return {
+            "error_type": "VALIDATION_ERROR",
+            "message": "Error en la validación de datos",
+            "errors": all_errors,
+            "total_errors": len(all_errors)
+        }, None
+
     except json.JSONDecodeError as e:
-        return f"Request con formato inválido: {e}",None
+        return {
+            "error_type": "INVALID_FORMAT_ERROR",
+            "message": "Request con formato inválido",
+            "details": str(e)
+        }, None
     except Exception as e:
-        return f"Error al validar el request: {e}",None
+       return {
+            "error_type": "UNEXPECTED_ERROR",
+            "message": "Error inesperado durante la validación",
+            "details": str(e)
+        }, None
     
         
