@@ -162,7 +162,7 @@ def lambda_handler(event,context):
         logger.info(f"Parametros de notificacion obtenidos: {params_noti}")
         if parametro_mantenimiento is True:
             logger.info("Latinia fuera de servicio.Todo trafico se envia hacia la cola")
-            mesaage_id = send_notification_to_queue(queue_url, body)
+            message_id = send_notification_to_queue(queue_url, body,fecha_proceso)
 
             return {
                 "statusCode":200,
@@ -173,7 +173,7 @@ def lambda_handler(event,context):
                 'body':json.dumps({
                     'codigoError':10,
                     'message':'Latinia fuera de servicio. Todo trafico se envia hacia la cola',
-                    'messageId':mesaage_id,
+                    'messageId':message_id,
                     'timestamp':fecha_proceso,
                 })
             }
@@ -198,7 +198,7 @@ def lambda_handler(event,context):
                 })
             }
             except requests.exceptions.Timeout:
-                send_notification_to_queue(queue_url, body)
+                send_notification_to_queue(queue_url, body,fecha_proceso)
                 return {
                     "statusCode":500,
                     "headers":{
@@ -214,7 +214,7 @@ def lambda_handler(event,context):
                 }
             
             except requests.exceptions.Timeout:
-                message_id = send_notification_to_queue(queue_url, body)
+                message_id = send_notification_to_queue(queue_url, body,fecha_proceso)
                 change_param_to_config_file(config_file, "mantenimiento", True)
                 return {
                     "statusCode": 500,
@@ -231,7 +231,7 @@ def lambda_handler(event,context):
             except requests.exceptions.RequestException as e:
                 logger.error(f"Hubo un error al comunicarse con Latinia. El mensaje será reencolado: {e}",exc_info=True,stack_info=True)
                 change_param_to_config_file(config_file, "mantenimiento", True)
-                message_id = send_notification_to_queue(queue_url, body)
+                message_id = send_notification_to_queue(queue_url, body,fecha_proceso)
                 return {
                     "statusCode":500,
                     "headers":{
@@ -278,7 +278,7 @@ def lambda_handler(event,context):
         }
     except requests.exceptions.RequestException as e:
         logger.error("Hubo un error al comunicarse con latinia. el mensaje será reencolado",exc_info=True,stack_info=True)
-        send_notification_to_queue(queue_url, body)
+        send_notification_to_queue(queue_url, body,fecha_proceso)
         return {
             "statusCode":500,
             "headers":{
@@ -293,7 +293,7 @@ def lambda_handler(event,context):
             })
         }    
     
-def send_notification_to_queue(queue_url,body):
+def send_notification_to_queue(queue_url,body,fecha_proceso):
     """
     Envio de notificacion a la cola
     Args:
@@ -307,7 +307,7 @@ def send_notification_to_queue(queue_url,body):
             MessageBody=json.dumps(
                 {
                     'payload':body,
-                    'timestamp':get_proccess_date(),
+                    'timestamp':fecha_proceso,
                     'messageId':str(uuid.uuid4()),
                     'intentos':0
                 }),
@@ -318,7 +318,7 @@ def send_notification_to_queue(queue_url,body):
                 },
                 'FechaProceso': {
                     'DataType': 'String',
-                    'StringValue': get_proccess_date()
+                    'StringValue': fecha_proceso
                 }
             }
         )

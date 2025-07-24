@@ -9,7 +9,7 @@ lambda:
 
 latinia:
   url: https://api-mock-seven.vercel.app/api/v1/send
-  mantenimiento: False
+  mantenimiento: True
   timeout_seconds: 10
 sqs:
   queue_url: "https://sqs.us-east-1.amazonaws.com/308528169754/bb-notificaciones-reenvio"
