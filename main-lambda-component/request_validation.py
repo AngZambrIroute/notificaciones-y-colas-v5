@@ -62,7 +62,7 @@ request_schema = {
             "type": ["string"]
         },
         "cod_ente":{
-            "type": ["string", "null"]
+            "type": ["int", "null"]
         },
         # "header":{
         #     "type":"object",
