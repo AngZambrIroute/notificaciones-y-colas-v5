@@ -64,6 +64,26 @@ def config_logger(config_file: dict):
 
 
 def lambda_handler(event,context):
+    enviroment = os.getenv("ENV")
+    enviroment = "dev" if enviroment is None else enviroment
+
+    config_file = load_yaml_file(f"config-{enviroment}.yml")
+
+
+    if config_file is None:
+        return {
+            "statusCode":500,
+            "headers":{
+                "Content-Type":"application/json",
+                
+            },
+            'body':json.dumps({
+                'codigoError':7011,
+                'message':'Error al cargar el archivo de configuracion',
+                'messageId':'',
+                'timestamp':fecha_proceso,
+            })
+        }
     logger = config_logger(config_file)
     fecha_proceso = get_proccess_date().strftime('%Y-%m-%d %H:%M:%S')
     logger.info("Fecha de proceso: %s", fecha_proceso)
@@ -87,26 +107,7 @@ def lambda_handler(event,context):
                 'timestamp': fecha_proceso,
             }, ensure_ascii=False, indent=2)
         }
-    enviroment = os.getenv("ENV")
-    enviroment = "dev" if enviroment is None else enviroment
-
-    config_file = load_yaml_file(f"config-{enviroment}.yml")
-
-
-    if config_file is None:
-        return {
-            "statusCode":500,
-            "headers":{
-                "Content-Type":"application/json",
-                
-            },
-            'body':json.dumps({
-                'codigoError':7011,
-                'message':'Error al cargar el archivo de configuracion',
-                'messageId':'',
-                'timestamp':fecha_proceso,
-            })
-        }
+    
     try:
         validate_config(config_file)
         print("Archivo de configuracion valido")
