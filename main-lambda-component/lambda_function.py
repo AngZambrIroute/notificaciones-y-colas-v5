@@ -132,7 +132,7 @@ def lambda_handler(event,context):
         user = secret["username"]
         password = secret["password"]
         host = secret["host"]
-        port = secret["port"]
+        port = int(secret["port"])
         db = secret["dbname"]
 
         params_noti = get_params_noti_as_dict(user, password, host, port, db)
