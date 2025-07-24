@@ -3,8 +3,33 @@ from urllib3.util import Retry
 import pytz
 import requests
 from logging import Logger
-
+import json
+import uuid
+import boto3
 import datetime
+
+def get_secret(secret_name: str, region_name: str = "us-east-1") -> dict:
+    """
+    Obtiene un secreto de AWS Secrets Manager.
+    
+    Args:
+        secret_name (str): Nombre del secreto a obtener.
+        region_name (str): Región de AWS donde se encuentra el secreto.
+        
+    Returns:
+        dict: Contenido del secreto como un diccionario.
+    """
+    session = boto3.session.Session()
+    client = session.client(service_name='secretsmanager', region_name=region_name)
+    
+    try:
+        get_secret_value_response = client.get_secret_value(SecretId=secret_name)
+        secret = get_secret_value_response['SecretString']
+        return json.loads(secret)
+    except Exception as e:
+        print(f"Error al obtener el secreto: {e}")
+        raise
+
 
 def create_session(reintentos:int = 3,backoff_factor:float = 0.5,):
     """
@@ -33,6 +58,20 @@ def create_session(reintentos:int = 3,backoff_factor:float = 0.5,):
     })
     session.timeout = (10,10)
     return session
+
+def generate_simple_sequential_id(canal: str = "BMO") -> str:
+    """
+    Genera un ID único usando timestamp + UUID truncado
+    """
+    canal = canal.ljust(3, '0')[:3]
+    now = datetime.datetime.now()
+    timestamp = now.strftime("%Y%m%d%H%M%S")
+    
+    # Usar últimos 6 dígitos del UUID (hex a decimal)
+    uuid_suffix = str(abs(hash(str(uuid.uuid4()))))[-6:].zfill(6)
+    
+    return f"{canal}{timestamp}{uuid_suffix}"
+
 
 
 def get_proccess_date():

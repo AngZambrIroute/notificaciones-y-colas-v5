@@ -31,3 +31,21 @@ BEGIN
 END $$
 
 DELIMITER ;
+
+
+INSERT INTO adq_tc_m_parametros (pa_parent, pa_nombre, pa_valor, pa_descripcion)
+VALUES
+  ('NotificacionesLinea', 'NotiEmpresa', 'Bolivariano', 'Nombre de la empresa para envio de notificacion');
+
+INSERT INTO adq_tc_m_parametros (pa_parent, pa_nombre, pa_valor, pa_descripcion)
+VALUES
+  ('NotificacionesLinea', 'NotiRefMessageLabel', 'Avisos24', 'Nombre de la empresa para envio de notificacion')
+
+
+
+create procedure pa_tcr_obtener_param_noti()
+begin
+  select pa_nombre, pa_valor, pa_descripcion
+  from adq_tc_m_parametros
+  where pa_parent = 'NotificacionesLinea';
+end;

@@ -61,6 +61,9 @@ request_schema = {
         "channels":{
             "type": ["string"]
         },
+        "cod_ente":{
+            "type": ["string", "null"]
+        },
         # "header":{
         #     "type":"object",
         #     "properties":{

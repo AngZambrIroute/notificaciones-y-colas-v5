@@ -6,6 +6,8 @@ from dotenv import load_dotenv
 import os
 import botocore
 from utils.utils import get_proccess_date,create_session,validate_config
+from utils.utils import get_secret
+from data.get_params import get_params_noti_as_dict
 import requests
 import logging
 import uuid
@@ -15,6 +17,9 @@ s3 = boto3.client('s3')
 
 BUCKET_NAME = os.getenv("CONFIG_BUCKET_NAME") or "bb-emisormdp-config"
 load_dotenv()
+SECRET_KEY_NAME = os.getenv("SECRET_KEY_NAME") or "mysql_mock"
+
+
 
 
 def load_yaml_file(config_path):
@@ -106,7 +111,47 @@ def lambda_handler(event,context):
         reintentos = int(config_file["lambda"]["backoff"]["max_retries"])
         backoff_factor = float(config_file["lambda"]["backoff"]["backoff_factor"])
 
+        #obtencion de parametros de notificacion
 
+        secret = get_secret(SECRET_KEY_NAME)
+        if secret is None:
+            logger.error("No se pudo obtener el secreto de la base de datos")
+            return {
+                "statusCode":500,
+                "headers":{
+                    "Content-Type":"application/json",
+                    
+                },
+                'body':json.dumps({
+                    'codigoError':60010,
+                    'message':'Error al obtener el secreto de la base de datos',
+                    'messageId':'',
+                    'timestamp':get_proccess_date(),
+                })
+            }
+        user = secret["username"]
+        password = secret["password"]
+        host = secret["host"]
+        port = secret["port"]
+        db = secret["dbname"]
+
+        params_noti = get_params_noti_as_dict(user, password, host, port, db)
+        if not params_noti:
+            logger.error("No se encontraron parametros de notificacion")
+            return {
+                "statusCode":500,
+                "headers":{
+                    "Content-Type":"application/json",
+                    
+                },
+                'body':json.dumps({
+                    'codigoError':60010,
+                    'message':'No se encontraron parametros de notificacion',
+                    'messageId':'',
+                    'timestamp':get_proccess_date(),
+                })
+            }
+        logger.info(f"Parametros de notificacion obtenidos: {params_noti}")
         if parametro_mantenimiento is True:
             logger.info("Latinia fuera de servicio.Todo trafico se envia hacia la cola")
             mesaage_id = send_notification_to_queue(queue_url, body)
