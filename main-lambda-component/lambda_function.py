@@ -64,14 +64,15 @@ def config_logger(config_file: dict):
 
 
 def lambda_handler(event,context):
+    logger = config_logger(config_file)
     fecha_proceso = get_proccess_date().strftime('%Y-%m-%d %H:%M:%S')
-    print("Fecha de proceso:", fecha_proceso)
-
+    logger.info("Fecha de proceso: %s", fecha_proceso)
+    logger.info("Evento recibido: %s", json.dumps(event, indent=2, ensure_ascii=False))
     #validacion de datos 
     error,body = validate_request(event)
     if error:
         status_code = 400
-        if error.get("error_type") == "VALIDATION_ERROR":
+        if error.get("error_type") == "UNEXPECTED_ERROR":
             status_code = 500
         return {
             "statusCode": status_code,
@@ -109,7 +110,7 @@ def lambda_handler(event,context):
     try:
         validate_config(config_file)
         print("Archivo de configuracion valido")
-        logger = config_logger(config_file)
+        
         queue_url = config_file["sqs"]["queue_url"]
         parametro_mantenimiento = config_file["latinia"]["mantenimiento"]
         latinia_url = config_file["latinia"]["url"]
