@@ -83,7 +83,7 @@ def lambda_handler(event,context):
                 'error': error.get("error_type", "VALIDATION_ERROR"),
                 'message': error.get("message", "Error en la validación de datos"),
                 'details': error.get("errors", []) if error.get("error_type") == "VALIDATION_ERROR" else error.get("details"),
-                'timestamp': get_proccess_date(),
+                'timestamp': fecha_proceso,
             }, ensure_ascii=False, indent=2)
         }
     enviroment = os.getenv("ENV")
@@ -103,7 +103,7 @@ def lambda_handler(event,context):
                 'codigoError':7011,
                 'message':'Error al cargar el archivo de configuracion',
                 'messageId':'',
-                'timestamp':get_proccess_date(),
+                'timestamp':fecha_proceso,
             })
         }
     try:
