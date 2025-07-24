@@ -115,6 +115,7 @@ def lambda_handler(event,context):
         latinia_url = config_file["latinia"]["url"]
         reintentos = int(config_file["lambda"]["backoff"]["max_retries"])
         backoff_factor = float(config_file["lambda"]["backoff"]["backoff_factor"])
+        fecha_proceso = get_proccess_date().strftime('%Y-%m-%d %H:%M:%S')
 
         #obtencion de parametros de notificacion
 
@@ -131,7 +132,7 @@ def lambda_handler(event,context):
                     'codigoError':60010,
                     'message':'Error al obtener el secreto de la base de datos',
                     'messageId':'',
-                    'timestamp':get_proccess_date(),
+                    'timestamp':fecha_proceso,
                 })
             }
         user = secret["username"]
@@ -153,7 +154,7 @@ def lambda_handler(event,context):
                     'codigoError':60010,
                     'message':'No se encontraron parametros de notificacion',
                     'messageId':'',
-                    'timestamp':get_proccess_date(),
+                    'timestamp':fecha_proceso,
                 })
             }
         logger.info(f"Parametros de notificacion obtenidos: {params_noti}")
@@ -171,7 +172,7 @@ def lambda_handler(event,context):
                     'codigoError':10,
                     'message':'Latinia fuera de servicio. Todo trafico se envia hacia la cola',
                     'messageId':mesaage_id,
-                    'timestamp':get_proccess_date(),
+                    'timestamp':fecha_proceso,
                 })
             }
 
@@ -191,7 +192,7 @@ def lambda_handler(event,context):
                     'codigoError':0,
                     'message':'Notificacion enviada a Latinia',
                     'messageId':'',
-                    'timestamp':get_proccess_date(),
+                    'timestamp':fecha_proceso,
                 })
             }
             except requests.exceptions.Timeout:
@@ -206,7 +207,7 @@ def lambda_handler(event,context):
                         'codigoError':60010,
                         'message':'La solicitud a Latinia ha excedido el tiempo de espera. Cambiando parametro de mantenimiento a True',
                         'messageId':'',
-                        'timestamp':get_proccess_date(),
+                        'timestamp':fecha_proceso,
                     })
                 }
             
@@ -222,7 +223,7 @@ def lambda_handler(event,context):
                         'codigoError': 60010,
                         'message': f'La solicitud a Latinia ha excedido el tiempo de espera. Cambiando parametro de mantenimiento a True:',
                         'messageId': message_id,
-                        'timestamp': get_proccess_date(),
+                        'timestamp': fecha_proceso,
                  })
                 }
             except requests.exceptions.RequestException as e:
@@ -239,7 +240,7 @@ def lambda_handler(event,context):
                         'codigoError':69,
                         'message':'Error al comunicarse con Latinia. El mensaje será reencolado',
                         'messageId':message_id,
-                        'timestamp':get_proccess_date(),
+                        'timestamp':fecha_proceso,
                     })
                 }
             
@@ -255,7 +256,7 @@ def lambda_handler(event,context):
                 'codigoError':60010,
                 'message':'Error al cargar el archivo de configuracion',
                 'messageId':'',
-                'timestamp':get_proccess_date(),
+                'timestamp':fecha_proceso,
             })
         }
     except botocore.exceptions.ClientError as e:
@@ -270,7 +271,7 @@ def lambda_handler(event,context):
                 'codigoError':9082,
                 'message':'Error al comunicarse con AWS',
                 'messageId':'',
-                'timestamp':get_proccess_date(),
+                'timestamp':fecha_proceso,
             })
         }
     except requests.exceptions.RequestException as e:
@@ -286,7 +287,7 @@ def lambda_handler(event,context):
                'codigoError':69,
                 'message':'Error al comunicarse con latinia. el mensaje será reencolado',
                 'messageId':'',
-                'timestamp':get_proccess_date(),
+                'timestamp':fecha_proceso,
             })
         }    
     
