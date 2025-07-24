@@ -5,7 +5,7 @@ from request_validation import validate_request
 from dotenv import load_dotenv
 import os
 import botocore
-from utils.utils import get_proccess_date,create_session,validate_config
+from utils.utils import get_proccess_date,create_session,validate_config,build_latinia_payload
 from utils.utils import get_secret
 from utils.utils import get_params_noti_as_dict
 import requests
@@ -109,6 +109,7 @@ def lambda_handler(event,context):
         }
     
     try:
+        
         validate_config(config_file)
         print("Archivo de configuracion valido")
         
@@ -160,6 +161,8 @@ def lambda_handler(event,context):
                 })
             }
         logger.info(f"Parametros de notificacion obtenidos: {params_noti}")
+        body = build_latinia_payload(body,params_noti,logger)
+        logger.info(f"Payload de Latinia construido: {json.dumps(body, indent=2, ensure_ascii=False)}")
         if parametro_mantenimiento is True:
             logger.info("Latinia fuera de servicio.Todo trafico se envia hacia la cola")
             message_id = send_notification_to_queue(queue_url, body,fecha_proceso)
