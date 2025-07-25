@@ -11,9 +11,34 @@ from urllib3.util import Retry
 
 
 sqs = boto3.client('sqs')
-s3 = boto3.client('s3') 
+s3 = boto3.client('s3')
+
 
 BUCKET_NAME = os.getenv("CONFIG_BUCKET_NAME") or "bb-emisormdp-config"
+
+
+def get_secret(secret_name: str, region_name: str = "us-east-1") -> dict:
+    """
+    Obtiene un secreto de AWS Secrets Manager.
+    
+    Args:
+        secret_name (str): Nombre del secreto a obtener.
+        region_name (str): Región de AWS donde se encuentra el secreto.
+        
+    Returns:
+        dict: Contenido del secreto como un diccionario.
+    """
+    session = boto3.session.Session()
+    client = session.client(service_name='secretsmanager', region_name=region_name)
+    
+    try:
+        get_secret_value_response = client.get_secret_value(SecretId=secret_name)
+        secret = get_secret_value_response['SecretString']
+        return json.loads(secret)
+    except Exception as e:
+        print(f"Error al obtener el secreto: {e}")
+        raise
+
 
 def create_session(reintentos:int = 3,backoff_factor:float = 0.5,):
     """
@@ -90,6 +115,70 @@ def get_proccess_date():
     ecuador_timezone = pytz.timezone("America/Guayaquil")
     return datetime.datetime.now(ecuador_timezone).strftime('%Y-%m-%d %H:%M:%S')
 
+def get_oauth_token(latinia_url_auth, latinia_secret_id_oauth, logger):
+    """
+    Obtiene el token de autenticación de Latinia
+    Args:
+        latinia_url_auth (str): URL de autenticación de Latinia
+        latinia_secret_id_oauth (str): ID del secreto de OAuth en AWS Secrets Manager
+        logger (Logger): Logger configurado para la aplicación
+    Returns:
+        str: Token de autenticación
+    """
+
+    try:
+        logger.info("Obteniendo token de OAuth para Latinia")
+
+        secret = get_secret(latinia_secret_id_oauth)
+        if not secret:
+            logger.error("No se pudo obtener el secreto de Oauth")
+            raise ValueError("No se pudo obtener el secreto de OAuth")
+        
+        logger.info(f"Secreto de OAuth obtenido: {latinia_secret_id_oauth}")
+
+        session = create_session()
+
+
+        auth_data = {
+            "grant_type": secret.get("grant_type", "client_credentials"),
+        }
+
+        if "scope" in secret and secret["scope"]:
+            auth_data["scope"] = secret["scope"]
+
+        auth_data = {k: v for k, v in auth_data.items() if v}
+
+        headers = {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Accept': 'application/json'
+        }
+        logger.info(f"Enviando petición OAuth con grant_type: {auth_data.get('grant_type')}")
+        logger.info(f"Usando Basic Auth con client_id: {secret.get('client_id')[:10]}...")
+
+
+        response = session.post(
+            url=latinia_url_auth,
+            data=auth_data,
+            headers=headers,
+            auth=(secret.get("client_id"), secret.get("client_secret")),
+            timeout=30
+        )
+        logger.info(f"Respuesta de autenticación OAuth: {response.status_code}")
+        response.raise_for_status()
+
+        token_data = response.json()
+        access_token = token_data.get("access_token")
+        if not access_token:
+            logger.error("No se obtuvo el access_token de la respuesta de OAuth")
+            raise ValueError("No se pudo obtener el access_token de la respuesta de OAuth")
+        
+
+        return access_token
+    except Exception as e:
+        logger.error(f"Error al obtener el token de OAuth: {e}", exc_info=True)
+        raise
+
+
 def lambda_handler(event,context):
     fecha_proceso = get_proccess_date()
     print(f"Fecha de proceso: {fecha_proceso}")
@@ -116,6 +205,8 @@ def lambda_handler(event,context):
     latinia_url = config_file["latinia"]["url"]
     reintentos = int(config_file["lambda"]["backoff"]["max_retries"])
     backoff_factor = float(config_file["lambda"]["backoff"]["backoff_factor"])
+    latinia_secret_id_oauth = config_file["latinia"]["secret_name_oauth"]
+    latinia_url_auth = config_file["latinia"]["auth"]
 
     try:
         if parametro_mantenimiento is True:
@@ -137,7 +228,9 @@ def lambda_handler(event,context):
             reintentos=reintentos,
             backoff_factor=backoff_factor,
             timeout_seconds= config_file["lambda"]["timeout_seconds"],
-            logger=logger
+            logger=logger,
+            latinia_secret_id_oauth=latinia_secret_id_oauth,
+            latinia_url_auth=latinia_url_auth,
         )
         return {
             "statusCode": 200,
@@ -162,7 +255,8 @@ def lambda_handler(event,context):
                 'timestamp': get_proccess_date(),
             })
         }
-def send_notification_to_latinia(latinia_url, body, session, timeout_seconds, logger):
+
+def send_notification_to_latinia(latinia_url, body, session, timeout_seconds, logger, latinia_secret_id_oauth, latinia_url_auth):
     """
     Envio de notificacion a latinia
     Args:
@@ -177,190 +271,13 @@ def send_notification_to_latinia(latinia_url, body, session, timeout_seconds, lo
     try:
         logger.info(f"Enviando notificación a Latinia: {latinia_url}")
         logger.info(f"Payload a enviar: {json.dumps(body, indent=2, ensure_ascii=False)}")
+        oauth_token = get_oauth_token(latinia_url_auth, latinia_secret_id_oauth, logger)
         
         response = req_session.post(
             url=latinia_url,
             json=body,
-            timeout=timeout_seconds
-        )
-        
-        logger.info(f"Respuesta de Latinia: {response.status_code} - {response.text}")
-        response.raise_for_status()
-        
-        # Log de respuesta exitosa
-        try:
-            response_data = response.json()
-            logger.info(f"Respuesta JSON de Latinia: {json.dumps(response_data, indent=2, ensure_ascii=False)}")
-        except json.JSONDecodeError:
-            logger.info(f"Respuesta de Latinia (texto plano): {response.text}")
-            
-        return response
-        
-    except requests.exceptions.ConnectionError as e:
-        logger.error("Error de conexión a Latinia después de agotar reintentos", exc_info=True, stack_info=True)
-        raise
-    except requests.exceptions.Timeout as e:
-        logger.error("La solicitud a Latinia ha excedido el tiempo de espera", exc_info=True, stack_info=True)
-        raise
-    except requests.exceptions.HTTPError as e:
-        logger.error(f"Error HTTP en respuesta de Latinia: {response.status_code} - {response.text}", exc_info=True, stack_info=True)
-        raise
-    except requests.exceptions.RequestException as e:
-        logger.error("Error general al comunicarse con Latinia", exc_info=True, stack_info=True)
-        raise
-
-def read_all_messages_from_queue(queue_url, logger):
-    """
-    Lee todos los mensajes disponibles en la cola SQS y los imprime como logs
-    Args:
-        queue_url (string): URL de la cola SQS
-        logger: Logger configurado
-    Returns:
-        int: Número total de mensajes procesados
-    """
-    total_messages = 0
-    
-    try:
-        logger.info(f"Iniciando lectura de mensajes de la cola: {queue_url}")
-        
-        while True:
-            response = sqs.receive_message(
-                QueueUrl=queue_url,
-                MaxNumberOfMessages=10,  
-                WaitTimeSeconds=5,      
-                MessageAttributeNames=['All'],
-                AttributeNames=['All']
-            )
-            
-            messages = response.get('Messages', [])
-            
-            if not messages:
-                logger.info("No hay más mensajes en la cola")
-                break
-            
-            for i, message in enumerate(messages, 1):
-                total_messages += 1
-                message_id = message.get('MessageId', 'N/A')
-                receipt_handle = message.get('ReceiptHandle', 'N/A')
-                
-                logger.info(f"--- Mensaje #{total_messages} ---")
-                logger.info(f"MessageId: {message_id}")
-                logger.info(f"ReceiptHandle: {receipt_handle[:50]}...")  # Solo primeros 50 caracteres
-                
-                try:
-                    message_body = json.loads(message.get('Body', '{}'))
-                    logger.info(f"Cuerpo del mensaje: {json.dumps(message_body, indent=2, ensure_ascii=False)}")
-                except json.JSONDecodeError:
-                    logger.warning(f"Cuerpo del mensaje no es JSON válido: {message.get('Body', '')}")
-                
-                message_attributes = message.get('MessageAttributes', {})
-                if message_attributes:
-                    logger.info("Atributos del mensaje:")
-                    for attr_name, attr_data in message_attributes.items():
-                        attr_value = attr_data.get('StringValue', attr_data.get('BinaryValue', 'N/A'))
-                        logger.info(f"  {attr_name}: {attr_value}")
-                
-                # Log de atributos del sistema
-                attributes = message.get('Attributes', {})
-                if attributes:
-                    logger.info("Atributos del sistema:")
-                    for attr_name, attr_value in attributes.items():
-                        logger.info(f"  {attr_name}: {attr_value}")
-                
-                logger.info(f"--- Fin Mensaje #{total_messages} ---\n")
-                
-                # IMPORTANTE: No eliminar mensajes aquí para solo lectura
-                # Si quieres eliminar después de leer, descomenta las siguientes líneas:
-                # sqs.delete_message(
-                #     QueueUrl=queue_url,
-                #     ReceiptHandle=receipt_handle
-                # )
-                # logger.info(f"Mensaje {message_id} eliminado de la cola")
-            
-            logger.info(f"Procesados {len(messages)} mensajes en este lote")
-            
-        logger.info(f"Lectura completada. Total de mensajes procesados: {total_messages}")
-        return total_messages
-        
-    except Exception as e:
-        logger.error(f"Error al leer mensajes de la cola: {e}", exc_info=True)
-        raise
-
-
-def process_message_and_send_to_latinia(message, latinia_url, session, timeout_seconds, logger):
-    """
-    Procesa un mensaje de SQS y envía su payload a Latinia
-    Args:
-        message (dict): Mensaje de SQS
-        latinia_url (string): URL de la API de Latinia
-        session (Session): Sesión de requests configurada
-        timeout_seconds (int): Timeout en segundos
-        logger: Logger configurado
-    Returns:
-        bool: True si el envío fue exitoso, False en caso contrario
-    """
-    try:
-        message_id = message.get('MessageId', 'N/A')
-        logger.info(f"Procesando mensaje {message_id}")
-        
-        # Extraer el cuerpo del mensaje
-        message_body = message.get('Body', '{}')
-        
-        try:
-            # Parsear el cuerpo del mensaje como JSON
-            parsed_body = json.loads(message_body)
-            logger.info(f"Cuerpo del mensaje parseado: {json.dumps(parsed_body, indent=2, ensure_ascii=False)}")
-            
-            # Extraer el payload del mensaje
-            payload = parsed_body.get('payload')
-            if not payload:
-                logger.error(f"No se encontró 'payload' en el mensaje {message_id}")
-                return False
-                
-            logger.info(f"Payload extraído del mensaje {message_id}: {json.dumps(payload, indent=2, ensure_ascii=False)}")
-            
-            # Enviar el payload a Latinia
-            response = send_notification_to_latinia(
-                latinia_url=latinia_url,
-                body=payload,  # Enviar solo el payload
-                session=session,
-                timeout_seconds=timeout_seconds,
-                logger=logger
-            )
-            
-            logger.info(f"Mensaje {message_id} enviado exitosamente a Latinia")
-            return True
-            
-        except json.JSONDecodeError as e:
-            logger.error(f"Error al parsear el cuerpo del mensaje {message_id} como JSON: {e}")
-            logger.error(f"Cuerpo del mensaje: {message_body}")
-            return False
-            
-    except Exception as e:
-        logger.error(f"Error al procesar mensaje {message.get('MessageId', 'N/A')}: {e}", exc_info=True)
-        return False
-
-
-def send_notification_to_latinia(latinia_url, body, session, timeout_seconds, logger):
-    """
-    Envio de notificacion a latinia
-    Args:
-        latinia_url (string):url de latinia
-        body (dict): cuerpo del request previamente validado
-        session (Session): sesion de requests con configuracion de reintentos
-        timeout_seconds (int): timeout en segundos
-        logger: logger configurado
-    """
-    
-    req_session = session
-    try:
-        logger.info(f"Enviando notificación a Latinia: {latinia_url}")
-        logger.info(f"Payload a enviar: {json.dumps(body, indent=2, ensure_ascii=False)}")
-        
-        response = req_session.post(
-            url=latinia_url,
-            json=body,
-            timeout=timeout_seconds
+            timeout=timeout_seconds,
+            headers={"Authorization": f"Bearer {oauth_token}"}
         )
         
         logger.info(f"Respuesta de Latinia: {response.status_code} - {response.text}")
@@ -414,7 +331,7 @@ def get_queue_attributes(queue_url, logger):
     except Exception as e:
         logger.error(f"Error al obtener atributos de la cola: {e}", exc_info=True)
 
-def process_message_and_send_to_latinia(message, latinia_url, session, timeout_seconds, logger):
+def process_message_and_send_to_latinia(message, latinia_url, session, timeout_seconds, logger, latinia_secret_id_oauth, latinia_url_auth):
     """
     Procesa un mensaje de SQS y envía su payload a Latinia
     Args:
@@ -449,7 +366,9 @@ def process_message_and_send_to_latinia(message, latinia_url, session, timeout_s
                 body=payload, 
                 session=session,
                 timeout_seconds=timeout_seconds,
-                logger=logger
+                logger=logger,
+                latinia_secret_id_oauth=latinia_secret_id_oauth,
+                latinia_url_auth=latinia_url_auth
             )
             
             logger.info(f"Mensaje {message_id} enviado exitosamente a Latinia")
@@ -464,7 +383,7 @@ def process_message_and_send_to_latinia(message, latinia_url, session, timeout_s
         logger.error(f"Error al procesar mensaje {message.get('MessageId', 'N/A')}: {e}", exc_info=True)
         return False
     
-def process_all_messages_and_send_to_latinia(queue_url, latinia_url, reintentos, backoff_factor, timeout_seconds, logger):
+def process_all_messages_and_send_to_latinia(queue_url, latinia_url, reintentos, backoff_factor, timeout_seconds, logger,latinia_secret_id_oauth, latinia_url_auth):
     """
     Lee todos los mensajes de la cola y envía sus payloads a Latinia
     Args:
@@ -518,7 +437,9 @@ def process_all_messages_and_send_to_latinia(queue_url, latinia_url, reintentos,
                     latinia_url=latinia_url,
                     session=session,
                     timeout_seconds=timeout_seconds,
-                    logger=logger
+                    logger=logger,
+                    latinia_secret_id_oauth=latinia_secret_id_oauth,
+                    latinia_url_auth=latinia_url_auth
                 )
                 
                 if success:
@@ -551,6 +472,9 @@ def process_all_messages_and_send_to_latinia(queue_url, latinia_url, reintentos,
     except Exception as e:
         logger.error(f"Error durante el procesamiento de mensajes: {e}", exc_info=True)
         raise
+
+
+
 
 
 
