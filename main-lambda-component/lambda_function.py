@@ -19,6 +19,12 @@ BUCKET_NAME = os.getenv("CONFIG_BUCKET_NAME") or "bb-emisormdp-config"
 load_dotenv()
 SECRET_KEY_NAME = os.getenv("SECRET_KEY_NAME") or "mysql_mock"
 
+flujo_operacion = {
+    "codigoError":0,
+    "mensaje":"",
+    "estado":"OK",
+}
+
 
 
 
@@ -64,9 +70,9 @@ def config_logger(config_file: dict):
 
 
 def lambda_handler(event,context):
+    # *******************Carga de configuracion y logger************************
     enviroment = os.getenv("ENV")
     enviroment = "dev" if enviroment is None else enviroment
-
     config_file = load_yaml_file(f"config-{enviroment}.yml")
 
 
@@ -86,9 +92,9 @@ def lambda_handler(event,context):
         }
     logger = config_logger(config_file)
     fecha_proceso = get_proccess_date().strftime('%Y-%m-%d %H:%M:%S')
-    logger.info("Fecha de proceso: %s", fecha_proceso)
+    logger.info("Fecha de proceso de notificacion: %s", fecha_proceso)
     logger.info("Evento recibido: %s", json.dumps(event, indent=2, ensure_ascii=False))
-    #validacion de datos 
+    #********************Validacion de request************************
     error,body = validate_request(event)
     if error:
         status_code = 400
@@ -109,20 +115,21 @@ def lambda_handler(event,context):
         }
     
     try:
-        
+        #*********************Validacion de archivo de configuracion************************
         validate_config(config_file)
-        print("Archivo de configuracion valido")
-        
+        print(f"Archivo de configuracion valido: {config_file}")
+        #*********************Obtencion de parametros de notificacion************************
         queue_url = config_file["sqs"]["queue_url"]
         parametro_mantenimiento = config_file["latinia"]["mantenimiento"]
         latinia_url = config_file["latinia"]["url"]
+        latinia_url_auth = config_file["latinia"]["auth"]
+        latinia_secret_id_oauth = config_file["latinia"]["secret_name_oauth"]
+        db_secret_name = config_file["db"]["secret_name_db"]
         reintentos = int(config_file["lambda"]["backoff"]["max_retries"])
         backoff_factor = float(config_file["lambda"]["backoff"]["backoff_factor"])
         
-
-        #obtencion de parametros de notificacion
-
-        secret = get_secret(SECRET_KEY_NAME)
+        #lectura de secreto para conexion rds
+        secret = get_secret(db_secret_name)
         if secret is None:
             logger.error("No se pudo obtener el secreto de la base de datos")
             return {
@@ -186,7 +193,8 @@ def lambda_handler(event,context):
             timeout_seconds = int(config_file["latinia"]["timeout_seconds"])
             session = create_session(reintentos,backoff_factor)
             try:
-                send_notification_to_latinia(latinia_url,body,session,timeout_seconds,logger)
+                oauth_token = get_oauth_token(latinia_url_auth, latinia_secret_id_oauth, logger)
+                send_notification_to_latinia(latinia_url,body,session,timeout_seconds,logger,oauth_token)
                 return {
                 "statusCode":200,
                 "headers":{
@@ -295,7 +303,33 @@ def lambda_handler(event,context):
                 'timestamp':fecha_proceso,
             })
         }    
+
+def get_oauth_token(latinia_url_auth, latinia_secret_id_oauth, logger):
+    """
+    Obtiene el token de autenticación de Latinia
+    Args:
+        latinia_url_auth (str): URL de autenticación de Latinia
+        latinia_secret_id_oauth (str): ID del secreto de OAuth en AWS Secrets Manager
+        logger (Logger): Logger configurado para la aplicación
+    Returns:
+        str: Token de autenticación
+    """
+    try:
+        secret = get_secret(latinia_secret_id_oauth)
+        if not secret:
+            raise ValueError("No se pudo obtener el secreto de OAuth")
+        
+        session = create_session()
+        response = session.post(latinia_url_auth, json=secret)
+        response.raise_for_status()
+        
+        token_data = response.json()
+        return token_data.get("access_token")
     
+    except Exception as e:
+        logger.error(f"Error al obtener el token de OAuth: {e}", exc_info=True)
+        raise
+
 def send_notification_to_queue(queue_url,body,fecha_proceso):
     """
     Envio de notificacion a la cola
@@ -337,8 +371,10 @@ def send_notification_to_queue(queue_url,body,fecha_proceso):
             print("Uno o más parámetros proporcionados son inválidos.")
         raise
         
-    
-def send_notification_to_latinia(latinia_url,body,session,timeout_seconds,logger):
+
+
+
+def send_notification_to_latinia(latinia_url,body,session,timeout_seconds,logger,oauth_token=None):
     """
     Envio de notificacion a latinia
     Args:
@@ -346,12 +382,23 @@ def send_notification_to_latinia(latinia_url,body,session,timeout_seconds,logger
         body (dict): cuerpo del request previamente validado
         session (Session): sesion de requests con configuracion de reintentos
     """
-    
     req_session = session
     try:
+
+        headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+        }
+        if oauth_token:
+            headers['Authorization'] = f'Bearer {oauth_token}'
+            logger.info("Token de OAuth incluido en la solicitud a Latinia")
+        else:
+            logger.warning("No se proporcionó token de OAuth. La solicitud a Latinia puede fallar.")
+
         response = req_session.post(
             url=latinia_url,
             json=body,
+            headers=headers,
             timeout=timeout_seconds
         )
         logger.info(f"Respuesta de Latinia: {response.status_code} - {response.text}")

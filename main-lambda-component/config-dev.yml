@@ -8,9 +8,17 @@ lambda:
     max_delay_seconds: 60
 
 latinia:
-  url: https://api-mock-seven.vercel.app/api/v1/send
-  mantenimiento: True
+  url: "https://api.dev.cuentafuturo.com/v1/mensajeria/latinia"
+  mantenimiento: False
+  auth: "https://bb-ms-core-dominio-cliente-dev.auth.us-east-1.amazoncognito.com/oauth2/token"
   timeout_seconds: 10
+  secret_name_oauth: "mpg-ms-tokenizacion-batch/dev/secretCatalogoCognito"
+
+db:
+  secret_name_db: "mysql_mock"
+
+s3:
+  bucket_name: "bb-emisormdp-config"
 sqs:
   queue_url: "https://sqs.us-east-1.amazonaws.com/308528169754/bb-notificaciones-reenvio"
 logging:

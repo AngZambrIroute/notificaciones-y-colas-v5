@@ -112,6 +112,8 @@ def validate_config(config):
     required_structure = {
         'lambda': ['timeout_seconds', 'env', 'backoff'],
         'latinia': ['url', 'mantenimiento'],
+        's3': ['bucket_name'],
+        'db':['secret_name_db'],
         'sqs': ['queue_url'],
         'logging': {
             'level': str,
