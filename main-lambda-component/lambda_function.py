@@ -318,11 +318,27 @@ def get_oauth_token(latinia_url_auth, latinia_secret_id_oauth, logger):
         secret = get_secret(latinia_secret_id_oauth)
         if not secret:
             raise ValueError("No se pudo obtener el secreto de OAuth")
-        
         session = create_session()
-        response = session.post(latinia_url_auth, json=secret)
+        auth_data = {
+            # "grant_type": secret.get("grant_type", "client_credentials"),
+            "client_id": secret.get("client_id"),
+            "client_secret": secret.get("client_secret")
+        }
+        if "scope" in secret and secret["scope"]:
+            auth_data["scope"] = secret["scope"]
+        auth_data = {k: v for k, v in auth_data.items() if v}
+
+        headers = {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Accept': 'application/json'
+        }
+        logger.info(f"Enviando petición OAuth con grant_type: {auth_data.get('grant_type')}")
+        response = session.post(latinia_url_auth, data=auth_data, headers=headers,timeout=30)
+        logger.info(f"Respuesta de autenticación OAuth: {response.status_code}")
+
+        if response.status_code !=200:
+            logger.error(f"Error al obtener el token de OAuth: {response.status_code} - {response.text}")
         response.raise_for_status()
-        
         token_data = response.json()
         return token_data.get("access_token")
     
