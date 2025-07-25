@@ -315,17 +315,25 @@ def get_oauth_token(latinia_url_auth, latinia_secret_id_oauth, logger):
         str: Token de autenticación
     """
     try:
+        logger.info("Obteniendo token de OAuth para Latinia")
+
         secret = get_secret(latinia_secret_id_oauth)
         if not secret:
+            logger.error("No se pudo obtener el secreto de Oauth")
             raise ValueError("No se pudo obtener el secreto de OAuth")
+        
+        logger.info(f"Secreto de OAuth obtenido: {latinia_secret_id_oauth}")
+
         session = create_session()
+
+
         auth_data = {
-            # "grant_type": secret.get("grant_type", "client_credentials"),
-            "client_id": secret.get("client_id"),
-            "client_secret": secret.get("client_secret")
+            "grant_type": secret.get("grant_type", "client_credentials"),
         }
+
         if "scope" in secret and secret["scope"]:
             auth_data["scope"] = secret["scope"]
+
         auth_data = {k: v for k, v in auth_data.items() if v}
 
         headers = {
@@ -333,14 +341,27 @@ def get_oauth_token(latinia_url_auth, latinia_secret_id_oauth, logger):
             'Accept': 'application/json'
         }
         logger.info(f"Enviando petición OAuth con grant_type: {auth_data.get('grant_type')}")
-        response = session.post(latinia_url_auth, data=auth_data, headers=headers,timeout=30)
-        logger.info(f"Respuesta de autenticación OAuth: {response.status_code}")
+        logger.info(f"Usando Basic Auth con client_id: {secret.get('client_id')[:10]}...")
 
-        if response.status_code !=200:
-            logger.error(f"Error al obtener el token de OAuth: {response.status_code} - {response.text}")
+
+        response = session.post(
+            url=latinia_url_auth,
+            data=auth_data,
+            headers=headers,
+            auth=(secret.get("client_id"), secret.get("client_secret")),
+            timeout=30
+        )
+        logger.info(f"Respuesta de autenticación OAuth: {response.status_code}")
         response.raise_for_status()
+
         token_data = response.json()
-        return token_data.get("access_token")
+        access_token = token_data.get("access_token")
+        if not access_token:
+            logger.error("No se obtuvo el access_token de la respuesta de OAuth")
+            raise ValueError("No se pudo obtener el access_token de la respuesta de OAuth")
+        
+
+        return access_token
     
     except Exception as e:
         logger.error(f"Error al obtener el token de OAuth: {e}", exc_info=True)
