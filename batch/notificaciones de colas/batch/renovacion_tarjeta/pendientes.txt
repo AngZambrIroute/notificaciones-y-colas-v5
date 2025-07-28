@@ -1,0 +1,2 @@
+ods_mov_inventario pendiente de llenar
+ods_plastico que contiene todas las tablas y razon de renovacion
