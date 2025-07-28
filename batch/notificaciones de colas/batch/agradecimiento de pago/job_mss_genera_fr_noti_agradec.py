@@ -595,4 +595,17 @@ def main():
     else:
         logger.warning("No se generaron archivos porque no hay datos formateados")
 
-main()
+
+if __name__ == "__main__":
+    try:
+        main()
+    except GlueJobError as e:
+        logger.error(f"Error en el job de Glue: {e}")
+        sys.exit(1)
+    except Exception as e:
+        logger.error(f"Error inesperado: {e}")
+        traceback.print_exc()
+        sys.exit(1)
+    finally:
+        job.commit()
+        logger.info("Job de Glue finalizado correctamente.")
