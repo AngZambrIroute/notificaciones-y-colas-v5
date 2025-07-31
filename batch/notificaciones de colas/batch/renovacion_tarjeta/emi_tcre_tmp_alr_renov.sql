@@ -1,20 +1,21 @@
-CREATE TABLE emi_tcre_tmp_alr_renovtc (
-    t_tipo_alerta       VARCHAR(5),
-    t_id_cuenta         INT NOT NULL,
-    t_id_tarjeta        INT NOT NULL,
-    t_tipo_tarjeta      VARCHAR(50),
-    t_nro_tarjeta       VARCHAR(20),
-    t_id_cliente        INT NOT NULL,
-    t_nombre_cliente    VARCHAR(50),
-    t_identificacion    VARCHAR(20),
-    t_tipo_identifica   CHAR(2),
-    t_tipo_mov          VARCHAR(20) NOT NULL,
-    t_codigo_renov      VARCHAR(25),
-    t_motivo_renov      VARCHAR(64),
-    t_cod_bodega        VARCHAR(8),
-    t_bodega            VARCHAR(255),
-    t_id_fec_proc       INT,
-    t_fecha_envio       DATETIME,
-    t_telefono          VARCHAR(20),
-    t_mail              VARCHAR(40)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+CREATE TABLE emi_noti_renov_tc_info (
+    t_tipo_alerta        VARCHAR(5)     NULL,
+    t_id_cuenta          INT            NOT NULL,
+    t_id_tarjeta         INT            NOT NULL,
+    t_tipo_tarjeta       VARCHAR(50)    NULL,
+    t_nro_tarjeta        VARCHAR(20)    NULL,
+    t_id_cliente         INT            NOT NULL,
+    t_nombre_cliente     VARCHAR(50)    NULL,
+    t_identificacion     VARCHAR(20)    NULL,
+    t_tipo_identifica    CHAR(2)        NULL,
+    t_tipo_mov           VARCHAR(20)    NOT NULL,
+    t_codigo_renov       VARCHAR(25)    NULL,
+    t_motivo_renov       VARCHAR(64)    NULL,
+    t_cod_bodega         VARCHAR(8)     NULL,
+    t_bodega             VARCHAR(255)   NULL,
+    t_id_fec_proc        INT            NULL,
+    t_fecha_envio        DATETIME       NULL,
+    t_telefono           VARCHAR(20)    NULL,
+    t_mail               VARCHAR(40)    NULL
+);
+
