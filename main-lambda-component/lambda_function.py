@@ -10,6 +10,7 @@ from utils.utils import get_secret
 from utils.utils import get_params_noti_as_dict
 import requests
 import logging
+
 import uuid
 sqs = boto3.client('sqs')
 s3 = boto3.client('s3') 

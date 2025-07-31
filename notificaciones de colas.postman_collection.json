@@ -1,0 +1,480 @@
+{
+	"info": {
+		"_postman_id": "411668bd-9458-4ff3-bef0-bb3ae91af292",
+		"name": "notificaciones de colas",
+		"description": "# 🚀 Get started here\n\nThis template guides you through CRUD operations (GET, POST, PUT, DELETE), variables, and tests.\n\n## 🔖 **How to use this template**\n\n#### **Step 1: Send requests**\n\nRESTful APIs allow you to perform CRUD operations using the POST, GET, PUT, and DELETE HTTP methods.\n\nThis collection contains each of these [request](https://learning.postman.com/docs/sending-requests/requests/) types. Open each request and click \"Send\" to see what happens.\n\n#### **Step 2: View responses**\n\nObserve the response tab for status code (200 OK), response time, and size.\n\n#### **Step 3: Send new Body data**\n\nUpdate or add new data in \"Body\" in the POST request. Typically, Body data is also used in PUT request.\n\n```\n{\n    \"name\": \"Add your name in the body\"\n}\n\n ```\n\n#### **Step 4: Update the variable**\n\nVariables enable you to store and reuse values in Postman. We have created a [variable](https://learning.postman.com/docs/sending-requests/variables/) called `base_url` with the sample request [https://postman-api-learner.glitch.me](https://postman-api-learner.glitch.me). Replace it with your API endpoint to customize this collection.\n\n#### **Step 5: Add tests in the \"Scripts\" tab**\n\nAdding tests to your requests can help you confirm that your API is working as expected. You can write test scripts in JavaScript and view the output in the \"Test Results\" tab.\n\n<img src=\"https://content.pstmn.io/fa30ea0a-373d-4545-a668-e7b283cca343/aW1hZ2UucG5n\" alt=\"\" height=\"1530\" width=\"2162\">\n\n## 💪 Pro tips\n\n- Use folders to group related requests and organize the collection.\n    \n- Add more [scripts](https://learning.postman.com/docs/writing-scripts/intro-to-scripts/) to verify if the API works as expected and execute workflows.\n    \n\n## 💡Related templates\n\n[API testing basics](https://go.postman.co/redirect/workspace?type=personal&collectionTemplateId=e9a37a28-055b-49cd-8c7e-97494a21eb54&sourceTemplateId=ddb19591-3097-41cf-82af-c84273e56719)  \n[API documentation](https://go.postman.co/redirect/workspace?type=personal&collectionTemplateId=e9c28f47-1253-44af-a2f3-20dce4da1f18&sourceTemplateId=ddb19591-3097-41cf-82af-c84273e56719)  \n[Authorization methods](https://go.postman.co/redirect/workspace?type=personal&collectionTemplateId=31a9a6ed-4cdf-4ced-984c-d12c9aec1c27&sourceTemplateId=ddb19591-3097-41cf-82af-c84273e56719)",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "39882278"
+	},
+	"item": [
+		{
+			"name": "Get data",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/info?id=1",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"info"
+					],
+					"query": [
+						{
+							"key": "id",
+							"value": "1"
+						}
+					]
+				},
+				"description": "This is a GET request and it is used to \"get\" data from an endpoint. There is no request body for a GET request, but you can use query parameters to help specify the resource you want data on (e.g., in this request, we have `id=1`).\n\nA successful GET response will have a `200 OK` status, and should include some kind of response body - for example, HTML web content or JSON data."
+			},
+			"response": []
+		},
+		{
+			"name": "envio de data a la cola",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Successful POST request\", function () {",
+							"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+							"});",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"refService\": \"CONIN\",\n  \"channels\": \"SAT\",\n  \"data\": {\n    \"tipotrj\": \"Visa\",\n    \"valor\": \"89.99\",\n    \"numtrj\": \"**** **** **** 0101\",\n    \"identi\": \"0987654321\",\n    \"des_transaccion\": \"Compra en Amazon\",\n    \"estado_pais\": \"Guayas\",\n    \"nom_pais\": \"Ecuador\",\n    \"fecha\": \"2025-05-27\",\n    \"hora\": \"10:45:00\",\n    \"nombre_cliente\": \"Luis Martínez\",\n    \"motivo\": \"Compra en línea\",\n    \"canal\": \"SAT\"\n  },\n  \"addresses\": [\n    {\n      \"className\": \"email\",\n      \"type\": \"to\",\n      \"ref\": \"cliente@example.com\"\n    },\n   {\n      \"className\": \"phone\",\n      \"type\": \"to\",\n      \"ref\": \"0991899474\"\n    }\n  ]\n}\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/submit",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"submit"
+					]
+				},
+				"description": "This is a POST request, submitting data to an API via the request body. This request submits JSON data, and the data is reflected in the response.\n\nA successful POST request typically returns a `200 OK` or `201 Created` response code."
+			},
+			"response": []
+		},
+		{
+			"name": "notificaciones v3",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Successful POST request\", function () {",
+							"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+							"});",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"header\": {\n    \"id\": \"CAN20250306123045000001\",\n    \"refCompany\": \"BOLIVARIANO\",\n    \"refService\": \"TCACT\",\n    \"keyValue\": \"123456\",\n    \"channels\": \"Web\",\n    \"refMsgLabel\": \"9202002\"\n  },\n  \"info\": {\n    \"loginEnterprise\": \"EmpresaX\",\n    \"refContract\": \"ContratoZ\"\n  },\n  \"data\": {\n    \"desccanal\": \"Descripción del canal\",\n    \"canal\": \"CANAL123\",\n    \"tipotrj\": \"Crédito\",\n    \"valor\": \"100.00\",\n    \"numtrj\": \"1234567890123456\",\n    \"identi\": \"1234567890\",\n    \"des_transaccion\": \"Compra en tienda\",\n    \"des_comercio\": \"ComercioX\",\n    \"plazo\": \"12\",\n    \"nombre_titular\": \"Juan Pérez\",\n    \"estado_pais\": \"ProvinciaX\",\n    \"nom_pais\": \"PaísY\",\n    \"fecha\": \"2025-03-06\",\n    \"hora\": \"12:30:45\",\n    \"nombre_cliente\": \"Juan Pérez\",\n    \"motivo\": \"Compra\",\n    \"fecha_hora\": \"2025-03-06T12:30:45\",\n    \"gsm\": \"123456789\",\n    \"email\": \"juan.perez@example.com\"\n  },\n  \"addresses\": [\n    {\n      \"className\": \"Email\",\n      \"type\": \"Personal\",\n      \"ref\": \"juan.perez@example.com\"\n    },\n    {\n      \"className\": \"SMS\",\n      \"type\": \"Personal\",\n      \"ref\": \"123456789\"\n    }\n  ],\n  \"contents\": [\n    {\n      \"value\": \"Contenido del mensaje\",\n      \"type\": \"text/plain\",\n      \"encoding\": \"UTF-8\",\n      \"name\": \"Mensaje\"\n    }\n  ]\n  \n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/v3/submit",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"v3",
+						"submit"
+					]
+				},
+				"description": "This is a POST request, submitting data to an API via the request body. This request submits JSON data, and the data is reflected in the response.\n\nA successful POST request typically returns a `200 OK` or `201 Created` response code."
+			},
+			"response": []
+		},
+		{
+			"name": "notificaciones v4",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Successful POST request\", function () {",
+							"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+							"});",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"refService\": \"PAGTC\",\n  \"channels\": \"BMO\",\n  \"cod_ente\":2334,\n  \"data\": {\n    \"tipotrj\": \"Visa\",\n    \"email\":\"angeldaniel6709@gmail.com\",\n    \"gsm\":\"0991899474\",\n    \"valor\": \"89.99\",\n    \"numtrj\": \"**** **** **** 0101\",\n    \"identi\": \"0987654321\",\n    \"des_transaccion\": \"Compra en Amazon\",\n    \"estado_pais\": \"Guayas\",\n    \"nom_pais\": \"Ecuador\",\n    \"fecha\": \"2025-05-27\",\n    \"hora\": \"10:45:00\",\n    \"nombre_titular\": \"Luis Martínez\",\n    \"motivo\": \"Compra en línea\",\n    \"canal\": \"SAT\"\n  },\n  \"addresses\": [\n    {\n      \"className\": \"email\",\n      \"type\": \"to\",\n      \"ref\": \"angeldaniel6709@gmail.com\"\n    },\n   {\n      \"className\": \"phone\",\n      \"type\": \"to\",\n      \"ref\": \"0991899474\"\n    }\n  ]\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/v3/submit",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"v3",
+						"submit"
+					]
+				},
+				"description": "This is a POST request, submitting data to an API via the request body. This request submits JSON data, and the data is reflected in the response.\n\nA successful POST request typically returns a `200 OK` or `201 Created` response code."
+			},
+			"response": []
+		},
+		{
+			"name": "Update data",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Successful PUT request\", function () {",
+							"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"name\": \"Add your name in the body\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/info?id=1",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"info"
+					],
+					"query": [
+						{
+							"key": "id",
+							"value": "1"
+						}
+					]
+				},
+				"description": "This is a PUT request and it is used to overwrite an existing piece of data. For instance, after you create an entity with a POST request, you may want to modify that later. You can do that using a PUT request. You typically identify the entity being updated by including an identifier in the URL (eg. `id=1`).\n\nA successful PUT request typically returns a `200 OK`, `201 Created`, or `204 No Content` response code."
+			},
+			"response": []
+		},
+		{
+			"name": "Delete data",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Successful DELETE request\", function () {",
+							"    pm.expect(pm.response.code).to.be.oneOf([200, 202, 204]);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/info?id=1",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"info"
+					],
+					"query": [
+						{
+							"key": "id",
+							"value": "1"
+						}
+					]
+				},
+				"description": "This is a DELETE request, and it is used to delete data that was previously created via a POST request. You typically identify the entity being updated by including an identifier in the URL (eg. `id=1`).\n\nA successful DELETE request typically returns a `200 OK`, `202 Accepted`, or `204 No Content` response code."
+			},
+			"response": []
+		},
+		{
+			"name": "latinia mock",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"refService\": \"CONIN\",\r\n  \"channels\": \"SAT\",\r\n  \"data\": {\r\n    \"tipotrj\": \"Visa\",\r\n    \"valor\": \"89.99\",\r\n    \"numtrj\": \"**** **** **** 0101\",\r\n    \"identi\": \"0987654321\",\r\n    \"des_transaccion\": \"Compra en Amazon\",\r\n    \"estado_pais\": \"Guayas\",\r\n    \"nom_pais\": \"Ecuador\",\r\n    \"fecha\": \"2025-05-27\",\r\n    \"hora\": \"10:45:00\",\r\n    \"nombre_cliente\": \"Luis Martínez\",\r\n    \"motivo\": \"Compra en línea\",\r\n    \"canal\": \"SAT\"\r\n  },\r\n  \"addresses\": [\r\n    {\r\n      \"className\": \"email\",\r\n      \"type\": \"to\",\r\n      \"ref\": \"cliente@example.com\"\r\n    },\r\n   {\r\n      \"className\": \"phone\",\r\n      \"type\": \"to\",\r\n      \"ref\": \"0991899474\"\r\n    }\r\n  ]\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{latinia_direct}}/api/v1/send",
+					"host": [
+						"{{latinia_direct}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"send"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "latinia bridge",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"hoka\":\"hola\"}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{latinia_bridge}}",
+					"host": [
+						"{{latinia_bridge}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "notificaciones a minsait",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"identificacion\": {\r\n            \"codigoEntidad\": \"1234\",\r\n            \"centroAlta\": \"5678\",\r\n            \"cuenta\": \"ES7621000418401234567891\",\r\n            \"numeroBeneficiario\": \"001\",\r\n            \"identificadorCliente\": \"987654321\"\r\n        },\r\n        \"tarjeta\": {\r\n            \"numeroTarjetaOfuscado\": \"1234********5678\",\r\n            \"fechaCaducidad\": \"2027-12\"\r\n        },\r\n        \"operacion\": {\r\n            \"fechaHoraOperacion\": \"2025-07-15T13:45:00Z\",\r\n            \"fechaHoraProceso\": \"2025-07-15T14:00:00Z\",\r\n            \"codigoComercio\": \"C123456789\",\r\n            \"nombreComercio\": \"Supermercado Central\",\r\n            \"poblacionComercio\": \"Madrid\",\r\n            \"paisComercio\": \"ES\"\r\n        },\r\n        \"importesYMonedas\": {\r\n            \"importeMonedaTitular\": 100.00,\r\n            \"monedaTitular\": \"EUR\",\r\n            \"importeMonedaOriginal\": 110.00\r\n        },\r\n        \"financiamiento\": {\r\n            \"numeroFinanciacion\": \"F1234567\",\r\n            \"porcentajeInteres\": 12.5,\r\n            \"taeCae\": 13.2,\r\n            \"importeTotalIntereses\": 15.50,\r\n            \"importeCuota\": 19.25,\r\n            \"numeroCuotas\": 6,\r\n            \"importeComisiones\": 2.00,\r\n            \"fechaAltaCompraCuotas\": \"2025-07-01\",\r\n            \"fechaProximaCuota\": \"2025-08-01\",\r\n            \"importeComisionApertura\": 1.00\r\n        },\r\n        \"cuentaYFormaDePago\": {\r\n            \"limiteCreditoCuenta\": 3000.00,\r\n            \"formaPago\": \"fijo\",\r\n            \"importeFijo\": 100.00,\r\n            \"porcentajePago\": 10.0,\r\n            \"importeMinimoPago\": 50.00,\r\n            \"fechaCargo\": \"2025-07-16\",\r\n            \"importeCargo\": 90.00\r\n        },\r\n        \"notificacion\": {\r\n            \"numeroNotificacion\": \"N123456\",\r\n            \"codigoPublicidad\": \"PUB01\",\r\n            \"codigoNotificacion\": \"NOTIF001\"\r\n        },\r\n        \"canalEnvio\": {\r\n            \"medioComunicacion\": \"email\",\r\n            \"descripcionMedio\": \"Correo electrónico\"\r\n        },\r\n        \"evento\": {\r\n            \"codigoEvento\": \"E200\",\r\n            \"descripcionEvento\": \"Compra con tarjeta\",\r\n            \"descripcionReducidaEvento\": \"Compra POS\"\r\n        }\r\n    }",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://5i8xvmd3m3.execute-api.us-east-1.amazonaws.com/notificaciones-nuek-bb",
+					"protocol": "https",
+					"host": [
+						"5i8xvmd3m3",
+						"execute-api",
+						"us-east-1",
+						"amazonaws",
+						"com"
+					],
+					"path": [
+						"notificaciones-nuek-bb"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "test de prueba de latinia",
+			"request": {
+				"auth": {
+					"type": "oauth2",
+					"oauth2": [
+						{
+							"key": "clientSecret",
+							"value": "1avvvevcf3n44j9tiv0n90ekqrap05p4vlor1hedk263cf1sn4ot",
+							"type": "string"
+						},
+						{
+							"key": "clientId",
+							"value": "4nafvcqsmishf2gvt2goqb3m1s",
+							"type": "string"
+						},
+						{
+							"key": "scope",
+							"value": "bb-ms-core-dominio-cliente-dev-srv/bb-ms-core-dominio-cliente-dev-scope",
+							"type": "string"
+						},
+						{
+							"key": "accessTokenUrl",
+							"value": "https://bb-ms-core-dominio-cliente-dev.auth.us-east-1.amazoncognito.com/oauth2/token",
+							"type": "string"
+						},
+						{
+							"key": "grant_type",
+							"value": "client_credentials",
+							"type": "string"
+						},
+						{
+							"key": "authUrl",
+							"value": "https://bb-ms-core-dominio-cliente-dev.auth.us-east-1.amazoncognito.com/oauth2/token",
+							"type": "string"
+						},
+						{
+							"key": "useBrowser",
+							"value": true,
+							"type": "boolean"
+						},
+						{
+							"key": "redirect_uri",
+							"value": "https://bb-ms-core-dominio-cliente-dev.auth.us-east-1.amazoncognito.com/oauth2/token",
+							"type": "string"
+						},
+						{
+							"key": "tokenName",
+							"value": "test",
+							"type": "string"
+						},
+						{
+							"key": "addTokenTo",
+							"value": "header",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n\"header\": {\r\n\"id\": \"BMO20250725164146420910\",\r\n\"refCompany\": \"BOLIVARIANO\",\r\n\"refService\": \"PAGTC\",\r\n\"keyValue\": \"2334\",\r\n\"channels\": \"BMO\",\r\n\"refMsgLabel\": \"Avisos24\"\r\n},\r\n\"info\": {\r\n\"loginEnterprise\": \"BOLIVARIANO\",\r\n\"refContract\": \"PAGTC\"\r\n},\r\n\"data\": {\r\n\"tipotrj\": \"Visa\",\r\n\"valor\": \"89.99\",\r\n\"numtrj\": \"**** **** **** 0101\",\r\n\"identi\": \"0987654321\",\r\n\"des_transaccion\": \"Compra en Amazon\",\r\n\"estado_pais\": \"Guayas\",\r\n\"nom_pais\": \"Ecuador\",\r\n\"fecha\": \"2025-05-27\",\r\n\"hora\": \"10:45:00\",\r\n\"nombre_titular\": \"Luis Martínez\",\r\n\"motivo\": \"Compra en línea\",\r\n\"canal\": \"SAT\"\r\n},\r\n\"addresses\": [\r\n{\r\n\"className\": \"email\",\r\n\"type\": \"to\",\r\n\"ref\": \"angeldaniel6709@gmail.com\"\r\n},\r\n{\r\n\"className\": \"phone\",\r\n\"type\": \"to\",\r\n\"ref\": \"0991899474\"\r\n}\r\n],\r\n\"contents\": []\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://api.dev.cuentafuturo.com/v1/mensajeria/latinia",
+					"protocol": "https",
+					"host": [
+						"api",
+						"dev",
+						"cuentafuturo",
+						"com"
+					],
+					"path": [
+						"v1",
+						"mensajeria",
+						"latinia"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "id",
+			"value": "1"
+		},
+		{
+			"key": "base_url",
+			"value": "https://yra3323aob.execute-api.us-east-1.amazonaws.com/",
+			"type": "string"
+		},
+		{
+			"key": "latinia_direct",
+			"value": "https://api-mock-seven.vercel.app",
+			"type": "string"
+		},
+		{
+			"key": "latinia_bridge",
+			"value": "https://94rt4ov2t9.execute-api.us-east-1.amazonaws.com/etapa1",
+			"type": "string"
+		}
+	]
+}
